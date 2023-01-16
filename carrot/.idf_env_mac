@@ -1,0 +1,17 @@
+#
+# ESP-IDF setup for Mac
+#
+
+# set idfx's ESP port for monitor/flash
+# export ESP_IDF_COM=${idf_serial_port}
+# ----------------------------------
+. $PROJ_ROOT/.idf_mac_port
+# ----------------------------------
+
+
+# optional
+if [ -f $PROJ_ROOT/.idf_mac_local ]; then
+    . $PROJ_ROOT/.idf_mac_local
+fi
+
+#end of file

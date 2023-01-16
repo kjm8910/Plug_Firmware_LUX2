@@ -1,0 +1,50 @@
+# detect the platform using $OSTYPE
+host_platform() {
+    case "$OSTYPE" in
+        darwin*)  
+            echo "OSX" 
+            ;;
+        linux*)   
+            if [[ "$(< /proc/version)" == *@(microsoft|WSL2)* ]]; then
+                echo "WSL2"
+            else
+                echo "LINUX"
+            fi
+            ;;
+        bsd*)       echo "BSD" ;;
+        msys*)      echo "WINDOWS" ;;
+        cygwin*)    echo "WINDOWS";;
+        *)          echo "$OSTYPE" 
+            ;;
+        esac
+}
+
+# setup IDF build system according to the local platform
+idf_platform_setup() {
+    case $IDF_HOST_PLATFORM in
+        WSL2)
+            if [ -f $PROJ_ROOT/.idf_env_wsl2 ]; then
+                . $PROJ_ROOT/.idf_env_wsl2
+            fi
+            ;;
+        OSX)
+            if [ -f $PROJ_ROOT/.idf_env_mac ]; then
+                . $PROJ_ROOT/.idf_env_mac
+            fi
+            ;;
+        LINUX)
+            echo "TODO - Need to organize a LINUX platform for ESP-IDF"
+            ;;
+        *)
+            echo "TODO - $IDF_HOST_PLATFORM"
+            ;;
+    esac    
+}
+
+# 1. detect the platform
+export IDF_HOST_PLATFORM="$(host_platform)"
+
+# 2. setup IDF build system
+idf_platform_setup
+
+#end of file

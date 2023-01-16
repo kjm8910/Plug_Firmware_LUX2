@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#
+# ESP-IDF setup automatically on WSL2 
+#
+WIN_C_DRV=/mnt/c
+
+# win_path_get <command>
+function win_path_get() {
+    command=$1
+    WHERE="/mnt/c/Windows/System32/where.exe"   # find the command of windows
+
+    ${WHERE} ${command} >& /dev/null
+    status=$?
+    if [ $status != 0 ]; then   # not found
+        return $status
+    fi
+
+    full_file=$(${WHERE} ${command} | sed -n 1p)     # first path (sed -n -1p)
+
+    # replace C:->/mnt/c, \->/ 
+    full_path=$(echo "${full_file}" | sed -r 's/C:/\/mnt\/c/g' | sed -r 's/\\/\//g')
+    echo $(dirname "${full_path}")      # dirname
+}
+
+command_list=( "wsl.exe" "explorer.exe" "code" 
+        "powershell.exe" "python.exe" "pip.exe" 
+        "openocd.exe" "riscv32-esp-elf-gdb.exe" )       
+
+#initial
+esp_local_path=""
+
+for c in "${command_list[@]}"; do
+    path=$(win_path_get $c)
+    if [ $? == 0 ]; then
+        if [ -z "$esp_local_path" ]; then
+            esp_local_path="$path"
+        else
+            esp_local_path+=":${path}"
+        fi
+    fi
+done
+
+wsl_local_file="${PROJ_ROOT}/.idf_wsl2_local"
+
+echo "#" > $wsl_local_file
+echo  "# ESP-IDF local setup on WSL2" >> $wsl_local_file
+echo "#" >> $wsl_local_file
+
+echo "WIN_C_DRV=/mnt/c" >> $wsl_local_file
+echo "ESP_WSL2_PATH='${esp_local_path}'" >> $wsl_local_file
+
+echo "" >> $wsl_local_file
+echo "# additional setup " >> $wsl_local_file
+echo "# ex) openocd.exe, riscv32-esp-elf-gdb.exe path" >> $wsl_local_file
+echo '# OPENOCD_PATH=${WIN_C_DRV}/Espressif/tools/openocd-esp32/v0.11.0-esp32-20211220/openocd-esp32/bin' >> $wsl_local_file
+echo '# ESP_TOOLS_PATH=${WIN_C_DRV}/Espressif/tools/riscv32-esp-elf/esp-2021r2-patch2-8.4.0/riscv32-esp-elf/bin' >> $wsl_local_file
+
+echo "" >> $wsl_local_file
+echo "" >> $wsl_local_file
+echo "# append ESP_WSL2_PATH" >> $wsl_local_file
+echo 'export PATH=${PATH}:${ESP_WSL2_PATH}:.' >> $wsl_local_file
+
+echo "" >> $wsl_local_file
+echo "# end of file" >> $wsl_local_file
+
+#end of file

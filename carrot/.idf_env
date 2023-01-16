@@ -1,0 +1,77 @@
+#
+# ESP-IDF environment
+#
+
+export IDF_TOOLS_PATH=$HOME/.espressif
+export ESP_IDF_HOME=$PROJ_ROOT/esp-idf
+export ESP_COMPONENTS=$ESP_IDF_HOME/components
+export ESP_EXAMPLES=$ESP_IDF_HOME/examples
+
+# path added
+export PATH=$PATH:/opt/homebrew/bin
+
+# default target
+export ESP_IDF_TARGET=esp32c3
+
+alias get_idf='. $ESP_IDF_HOME/export.sh'
+alias idf=idf.py
+
+# Local ESP-IDF environment
+# ----------------------------------
+. $PROJ_ROOT/.idf_env_local
+# ----------------------------------
+
+# tool command
+alias esp='cd $ESP_IDF_HOME'
+alias components='cd $ESP_COMPONENTS'
+alias examples='cd $ESP_EXAMPLES'
+
+alias set-target='idf set-target $ESP_IDF_TARGET'
+alias set-target-linux='idf --preview set-target linux'
+alias menuconfig='idf menuconfig' 
+
+alias build='idf build'
+alias buildapp='idf app'
+alias build_make='idf -G "Unix Makefiles" build'
+alias clean='idf clean'
+alias fullclean='idf fullclean'
+
+# addr2line
+alias a2l='riscv32-esp-elf-addr2line'
+
+# flash/monitor setup
+case $IDF_HOST_PLATFORM in
+    OSX)
+        alias flash='idf flash -p $ESP_IDF_COM'
+        alias monitor='idf monitor -p $ESP_IDF_COM'
+    ;;
+    WSL2)
+        alias flash='idfx flash $ESP_IDFX_COM'
+        alias monitor='idfx monitor $ESP_IDFX_COM'
+        alias esp_gdb='riscv32-esp-elf-gdb.exe'
+    ;;
+    LINUX)
+        echo "TODO - Linux Platform"
+    ;;
+    *)
+esac
+
+alias b=build
+alias ba=buildapp
+alias f=flash
+alias m=monitor
+alias bfm='build && flash && monitor'
+alias fm='flash && monitor'
+
+
+# configure ESP-IDF only once
+if [ "$ESP_IDF_LOAD" != "yes" ]; then
+# ----------------------------------
+    . $ESP_IDF_HOME/export.sh
+# ----------------------------------
+fi
+
+# set load
+export ESP_IDF_LOAD=yes
+
+# end of file

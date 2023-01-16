@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# configure windows serial port
+function idfx_win_com_set() {
+    local -n win_port=$1
+
+    POWERSHELL=powershell.exe
+    if ! command -v ${POWERSHELL} >& /dev/null; then
+        echo "${POWERSHELL} not found"
+    fi
+
+    command="[System.IO.Ports.SerialPort]::getportnames()"
+    result=$(${POWERSHELL} ${command})
+
+    IFS=$'\r\n' read -a ports <<< "${result//$'\r\n'/ }"
+
+    # space-delimited string into a array
+    IFS=' ' read -a ports <<< "${ports}" 
+
+    if [ ! ${ports} ]; then
+        port_num=0
+    else
+        port_num=${#ports[@]}
+    fi
+
+    if [ $port_num -eq 1 ]; then
+        win_port=${ports[0]}
+    elif [ $port_num -ge 2 ]; then 
+        echo "List of available ports on your windows"
+        i=1
+        max=${#ports[@]}
+        for p in ${ports[@]}; do
+            echo "$i) $p"
+            ((i=i+1))
+        done
+
+        selected=0  # default first port
+        echo -n "Select the port for ESP monitor/flash[1]: "
+        read answer
+        if [ ! -z "$answer" ] && ((1<=$answer && $answer<=$max)); then
+            selected=$(($answer-1))
+        fi
+
+        win_port=${ports[$selected]}
+    fi
+}
+
+win_com_port=""   # default
+idfx_win_com_set win_com_port
+BLUE='\033[034m'
+RED='\033[31m'
+NC='\033[0m' # No Color
+
+if [[ -n $win_com_port ]]; then
+    echo -e "${BLUE}"
+    echo -e "You will use [${win_com_port}] for the ESP-IDFX monitor/flash"
+    echo -e "${NC}"
+else
+    echo -e "${RED}"
+    echo -e "Warning: No ESP-IDFX COM for monitor/flash"
+    echo -e "${NC}"
+fi
+
+export ESP_IDFX_COM=${win_com_port}
+
+#end of file

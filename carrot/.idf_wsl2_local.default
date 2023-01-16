@@ -1,0 +1,38 @@
+#
+# ESP-IDF local setup for WSL2
+#
+# Note)
+# 이 파일은 WSL2에서 ESP-IDF를 사용하기 위한 기본 환경 파일입니다.
+# $HOME/.idx_wsl2_local 파일로 복사하여 
+# 개인 환경에 맞게 수정해서 사용하세요.
+
+export WIN_C_DRV=/mnt/c
+
+# How to find the windows command
+# where <command> in the command windows
+# ex) where powershell.exe 
+
+# powershell.exe on WSL2
+PowerShell_PATH=${WIN_C_DRV}/Windows/System32/WindowsPowerShell/v1.0
+
+# pyhone.exe on WSL2
+Python_PATH=${WIN_C_DRV}/Users/Harrison/AppData/Local/Programs/Python/Python310:\
+${WIN_C_DRV}/Users/Harrison/AppData/Local/Programs/Python/Python39/Scripts
+
+# code (VS Code)
+VSCode_PATH="${WIN_C_DRV}/Users/Harrison/AppData/Local/Programs/Microsoft VS Code/bin"
+# cmd.exe 
+System_PATH=${WIN_C_DRV}/Windows:${WIN_C_DRV}/Windows/system32
+
+# openocd.exe 
+OPENOCD_PATH=${WIN_C_DRV}/Espressif/tools/openocd-esp32/v0.11.0-esp32-20211220/openocd-esp32/bin
+# riscv32-esp-elf-gdb.exe
+ESP_TOOLS_PATH=${WIN_C_DRV}/Espressif/tools/riscv32-esp-elf/esp-2021r2-patch2-8.4.0/riscv32-esp-elf/bin
+
+# Windows path for idfx
+export WINDOWS_PATH=${PowerShell_PATH}:${Python_PATH}:${VSCode_PATH}:${System_PATH}:${OPENOCD_PATH}:${ESP_TOOLS_PATH}
+
+# Below is used in idfx command
+export PATH=$PATH:$WINDOWS_PATH:.
+
+#end of file
