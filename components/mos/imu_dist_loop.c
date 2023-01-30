@@ -9,6 +9,7 @@
 // https://www.notion.so/08aac645f9a143489406a3f515fd0cf6
 // 프로토콜 참고
 // 230130 MON
+// Test FINN
 #include "imu_dist_loop.h"
 //#include "nrf_log.h"
 //#include "nrf_log_ctrl.h"
