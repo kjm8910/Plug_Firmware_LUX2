@@ -16,7 +16,7 @@
 extern double del_dist = 0.0;
 extern uint8_t flag_car_stop = false;
 extern double dist = 0.0;
-extern float dt;
+extern float dt = 0.01;
 extern double del_deg_pos[2] = {0,};
 
 void imu_unit_conv(float *acc, float *gyro);
@@ -29,7 +29,7 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
                             uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time){
-
+    dt = (float)(diff_time) / 1000.0;
     //printf("$ACC %f\t%f\t%f\n",acc[0], acc[1], acc[2]);
     //printf("$GYRO %f\t%f\t%f\n",gyro[0], gyro[1], gyro[2]);
     static uint8_t flag_cross = false;
@@ -118,7 +118,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     gyro_est[1] = gyro_lpf[1] - (int32_t)(bias_gyro[1]*sf_gyro*DEG2RAD);
     gyro_est[2] = gyro_lpf[2] - (int32_t)(bias_gyro[2]*sf_gyro*DEG2RAD);
     
-    x_est_ars = kf_ars_loop(acc_lpf, gyro_est, diff_time);
+    x_est_ars = kf_ars_loop(acc_lpf, gyro_est);
     memcpy(qut, x_est_ars, sizeof(qut));
     memcpy(pre_bias, bias_gyro, sizeof(pre_bias));
     memcpy(bias_gyro, (x_est_ars + 4), sizeof(bias_gyro));
@@ -186,7 +186,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
         if(one_sec > 990){
-            if (dist_1sec > 8.0) dist_1sec = 8.0;
+            if (dist_1sec > 8.0) dist_1sec = 0.0;
             
             dist += dist_1sec;
             dist_1sec = 0.0;
@@ -250,9 +250,11 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     static float cst_stop = 0.07;
     static uint8_t flag_stop_cst = false;
     static int cnt_diff_bias = 0;
-    float diff_bias = 0.0; 
+    float diff_bias = 0.0;
+    float diff_bias_2 = 0.0; 
     diff_bias = fabs(bias_gyro[0] - pre_bias[0]);//deg
-
+    diff_bias_2 = fabs(bias_gyro[1] - pre_bias[1]);//deg
+    //printf("$bias diff %f\t%f\n", diff_bias, diff_bias_2);
     if(flag_stop_cst == false){
         //memmove(buf, buf+1, sizeof(buf)-sizeof(float));
         for(int i = 0; i < 50 ;i++)
@@ -284,7 +286,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     else if(diff_bias > 0.25){ // 221205, Roation without Car moving 
         cnt_diff_bias = 0;
         flag_car_stop = false;
-        cnt_ars--;
+        cnt_ars-= 10;
         if(cnt_ars <0) cnt_ars = 0;
     }
     else {
@@ -306,29 +308,6 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
     define_vehicle_stop(bias_gyro, pre_bias, cnt_ars);
     //////////////////////////////////////////////////////////////////
     if(flag_car_stop == false){
-        
-        // Numerical Integration Using Runge Kutta 4th
-        // Inuput : Acceleration
-        // Output : Position & Velocity
-        // cX_est[0 ~ 2] => Position(NED)
-        // cX_est[3 ~ 5] => Velocity(NED)
-        rk4_dist(cX_est, acc_ned, acc_ned_est);
-
-        // 7. Calculation Distance
-        // Input : Lat1, Long1, Lat2, Long2(degree)
-        // Output : Distance (meter)
-        del_dist = calculate_dist(cX_est[0], cX_est[1], 
-                        pX_est[0], pX_est[1]);
-
-        // 221205, Roation without Car moving  ///////////////////// ///////////////////// /////////////////////
-        //정지 상태에서 플러그를 돌리는 상황 방지(수정 필요)
-        /*
-        if(norm_acc_lpf<9.81*1.02 && norm_acc_lpf > 9.81*0.98){
-            if(nGyro > 20.0*DEG2RAD){
-                del_dist = 0.0;
-            }
-        }*/ 
-        // 221205, Roation without Car moving 
         float nGyro = 0.0;                   // norm of Anguler rate
         float fgyro_lpf[3] = {0, };
         fgyro_lpf[0] = (float)(gyro_lpf[0]/sf_acc);
@@ -337,7 +316,8 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         nGyro = norm_vec(3, fgyro_lpf) * RAD2DEG; //RAD
         double norm_acc = sqrt(acc_ned[0]*acc_ned[0] + acc_ned[1]*acc_ned[1] + 
                                 acc_ned[2]*acc_ned[2]);
-        
+        //printf("$ACC NED %f\t%f\t%f\t%f\t%f\t%f\t\n",acc_ned[0],acc_ned[1],acc_ned[2],
+        //                        acc_ned_est[0],acc_ned_est[1],acc_ned_est[2]);
         if(nGyro > 40){
             del_dist = 0.0;
             cnt_ars = 0;
@@ -351,6 +331,23 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
             del_dist = 0.0;
             cnt_ars = 0;
         }
+        else if(acc_ned[2] > 9.7 && acc_ned[2] < 9.81*1.02){
+            // Numerical Integration Using Runge Kutta 4th
+            // Inuput : Acceleration
+            // Output : Position & Velocity
+            // cX_est[0 ~ 2] => Position(NED)
+            // cX_est[3 ~ 5] => Velocity(NED)
+            rk4_dist(cX_est, acc_ned, acc_ned_est);
+            // 7. Calculation Distance
+            // Input : Lat1, Long1, Lat2, Long2(degree)
+            // Output : Distance (meter)
+            del_dist = calculate_dist(cX_est[0], cX_est[1], 
+                            pX_est[0], pX_est[1]);
+        }
+        else{
+            del_dist = 0;
+        }
+        
     }
     else if(flag_car_stop == true){
         del_dist = 0.0;

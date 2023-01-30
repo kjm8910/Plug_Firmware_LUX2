@@ -1,10 +1,9 @@
 #include "_kf.h"
 #include "imu_dist_loop.h"
 kf_ars_t kf_ars;
-extern float dt = 0.01;  
-float* kf_ars_loop(int32_t acc_lpf[3],int32_t gyro_lpf[3], uint32_t diff_time){
+extern float dt;  
+float* kf_ars_loop(int32_t acc_lpf[3],int32_t gyro_lpf[3]){
     static uint8_t flag_ars_init = false; 
-    dt =(float)(diff_time)/1000.0;
     if (flag_ars_init == false) {
       // 1. Initialization
       memset(&kf_ars,0, sizeof(kf_ars)); 

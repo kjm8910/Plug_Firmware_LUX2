@@ -16,7 +16,7 @@
 // RK4 -> Position ->Dist
 // Compare between RTK, GNSS and IMU
 // OutPUT -> IMU DIST
-
+extern float dt;
 void acc2attitude(int32_t acc[3], int32_t  arr[3]){
     float ax, ay, az;
     float roll, pitch;
@@ -32,7 +32,7 @@ void acc2attitude(int32_t acc[3], int32_t  arr[3]){
     arr[1] = (int32_t)(pitch*sf_att);
     arr[2] = 0;
 }
-extern float dt;
+
 void gyro2attitude(int32_t gyro[3], int32_t  arr[3]){
     float gx, gy, gz;
     //float roll, pitch, yaw;
@@ -132,7 +132,8 @@ double calculate_dist(double cLat, double cLong, double pLat, double pLong){
         double CT;
         CT = 2.0*atan2(sqrt(C), sqrt(1 - C));
         Dist = (double)(a*CT);//meter
-        if (Dist >= 0.1) Dist = 0.10;
+
+        if (Dist/(double)dt >= 8) Dist = 0.10;
         //else if(Dist <= 0.001) 
         //    Dist = 0.0;
         return Dist;
