@@ -1,1 +1,0 @@
-/Users/jm.kim/Desktop/carrot/esp-idf/components/mbedtls/mbedtls/library/version_features.c
