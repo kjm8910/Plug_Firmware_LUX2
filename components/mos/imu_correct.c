@@ -210,21 +210,22 @@ void ACC_Calib(float *acc_ned, float acc_est[3], int N_acc){
             printf("Accel Calib Done!!! \n");
             flag_acc_done = false;
         }
-        if (norm_acc > 0.5) { 
-            cnt_cal_reset++;
-            if(cnt_cal_reset > 500){
-                cnt_acc = 0;
-                cnt_cal_reset = 0;
-                memcpy(cal_acc,0,sizeof(cal_acc));
-            }
-        }
+        if (norm_acc > 0.5) cnt_cal_reset++;
         //221125 else 추가
         else{
             cnt_cal_reset--;
             if (cnt_cal_reset < 0) cnt_cal_reset = 0;
         }
-        acc_est[0] = acc_ned[0] - cal_acc[0]/(float)cnt_acc;
-        acc_est[1] = acc_ned[1] - cal_acc[1]/(float)cnt_acc;
-        acc_est[2] = acc_ned[2] - cal_acc[2]/(float)cnt_acc;
+        if(cnt_cal_reset > 500){
+                cnt_acc = 20;
+                cnt_cal_reset = 0;
+                memcpy(cal_acc,0,sizeof(cal_acc));
+        }
+        else{
+            acc_est[0] = acc_ned[0] - cal_acc[0]/(float)cnt_acc;
+            acc_est[1] = acc_ned[1] - cal_acc[1]/(float)cnt_acc;
+            acc_est[2] = acc_ned[2] - cal_acc[2]/(float)cnt_acc;
+        }
+        
     }
 }

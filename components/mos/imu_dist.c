@@ -196,7 +196,7 @@ void rk4_dist(double rk4_x_est[6], float acc_ned[3],
     uint8_t flag = true;
     float norm_acc_est = 0;
     norm_acc_est = norm_vec(3, acc_ned_est);
-    if (fabs(acc_ned_est[2]) > 1 || norm_acc_est == 0.0){
+    if (fabs(acc_ned_est[2]) > 0.4 || norm_acc_est == 0.0){
         flag = false;
         acc[0] = (double)(acc_ned[0]); // acc_ned include gravity force
         acc[1] = (double)(acc_ned[1]);
