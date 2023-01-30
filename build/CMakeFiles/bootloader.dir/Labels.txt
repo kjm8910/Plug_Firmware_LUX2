@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/Users/jm.kim/Desktop/carrot/mosa/build/CMakeFiles/bootloader
+/Users/jm.kim/Desktop/carrot/mosa/build/CMakeFiles/bootloader.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/CMakeFiles/bootloader-complete.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/Users/jm.kim/Desktop/carrot/mosa/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
