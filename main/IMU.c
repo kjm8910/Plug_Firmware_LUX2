@@ -22,7 +22,7 @@ void mosa_imu_push_cb(float f_acc[3], float f_gyro[3])
 
     diff_time = mosa_time_elapsed(&mosa_imu_time_ms);
     diff_time = diff_time;      // not used ?
-
+    //printf("$IMU %f\t%f\t%f\t%f\t%f\t%f\t\n",f_gyro[0],f_gyro[1],f_gyro[2], f_acc[0],f_acc[1],f_acc[2]);
     Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, POS_Result, 
                         flag_power_off, flag_gnss_state, diff_time);
     for (i = 0; i < 3; i++) {

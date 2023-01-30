@@ -124,7 +124,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     memcpy(bias_gyro, (x_est_ars + 4), sizeof(bias_gyro));
 
     static int cnt_ars = 0;
-    if(cnt_ars < 150){
+    if(cnt_ars < 300){
         cnt_ars++;
         flag_car_stop = true;
         return 0;
@@ -176,21 +176,26 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
                     acc_ned, acc_ned_est, gyro_est);
         
     }
+    
     if (Pos_IMU[0] >= 30.0 && flag_gnss_state == false) {
         //double del_dist_deg = 0.0;
-        static uint32_t one_sec = 0;
-        static uint8_t cnt_print = 0;
         static double dist_1sec = 0.0;
+        static uint32_t one_sec = 0;
         //dist += del_dist;
         dist_1sec += del_dist;
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
         if(one_sec > 990){
             if (dist_1sec > 8.0) dist_1sec = 8.0;
+            
             dist += dist_1sec;
-            dist_1sec = 0;
+            dist_1sec = 0.0;
+            one_sec = 0.0;
         } 
-        if (cnt_print > 100) {
+
+        static uint8_t cnt_print = 0;
+        
+        if (cnt_print > 50) {
             printf("IMU DIST : %f meter\n", dist);
             //printf("GPS TEST : %f %f \n", preGPS[0], curGPS[0]);
             cnt_print = 0;
@@ -329,10 +334,20 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         fgyro_lpf[0] = (float)(gyro_lpf[0]/sf_acc);
         fgyro_lpf[1] = (float)(gyro_lpf[1]/sf_acc);
         fgyro_lpf[2] = (float)(gyro_lpf[2]/sf_acc);
-        nGyro = norm_vec(3, fgyro_lpf); //RAD
-        //float diff_bias = 0.0; 
-        //diff_bias = fabs(bias_gyro[0] - pre_bias[0]);
-        if(nGyro > 40.0*DEG2RAD){
+        nGyro = norm_vec(3, fgyro_lpf) * RAD2DEG; //RAD
+        double norm_acc = sqrt(acc_ned[0]*acc_ned[0] + acc_ned[1]*acc_ned[1] + 
+                                acc_ned[2]*acc_ned[2]);
+        
+        if(nGyro > 40){
+            del_dist = 0.0;
+            cnt_ars = 0;
+        }
+        else if(fabs(fgyro_lpf[0]) < 10*DEG2RAD && fabs(fgyro_lpf[1]) >= 40*DEG2RAD ){
+            
+            del_dist = 0.0;
+            cnt_ars = 0;
+        }
+        else if (norm_acc < 1.02 && norm_acc>0.98 && nGyro > 10){
             del_dist = 0.0;
             cnt_ars = 0;
         }
@@ -342,9 +357,11 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         pX_est[3]  = 0.0;
         pX_est[4]  = 0.0;
         pX_est[5]  = 0.0;
+        cnt_ars--;
         memcpy(cX_est, pX_est, sizeof(pX_est));
     }
-    //dist += del_dist;
+
+    if(cnt_ars < 0) cnt_ars = 0;
 
     del_deg_pos[0] = (cX_est[0] - pX_est[0])*RAD2DEG;
     del_deg_pos[1] = (cX_est[1] - pX_est[1])*RAD2DEG;
