@@ -7,6 +7,8 @@ extern uint8_t flag_gnss_state;
 extern uint8_t flag_power_off;
 extern double POS_Result[2] = {0,0 };
 extern double Dist_IMU_DEG;
+
+//Test
 void mosa_gps_push_cb(uint32_t lat, uint32_t lon, 
 int32_t alt, uint32_t speed, uint32_t acc)
 {
