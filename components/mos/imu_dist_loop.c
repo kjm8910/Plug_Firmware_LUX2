@@ -8,8 +8,7 @@
 // OutPut : Filtering Data, Dist, etc
 // https://www.notion.so/08aac645f9a143489406a3f515fd0cf6
 // 프로토콜 참고
-// 230130 MON
-// Test FINN
+
 #include "imu_dist_loop.h"
 //#include "nrf_log.h"
 //#include "nrf_log_ctrl.h"
@@ -34,14 +33,11 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     //printf("$ACC %f\t%f\t%f\n",acc[0], acc[1], acc[2]);
     //printf("$GYRO %f\t%f\t%f\n",gyro[0], gyro[1], gyro[2]);
     static uint8_t flag_cross = false;
-    static double preGPS[2] = {0.0, };
-    double curGPS[2] = {0.0, };
     static double Pos_IMU[2] = {0, };
     float euler[3] = {0, };              // Attitude(Roll, Pitch, Yaw)
     float acc_ned[3] = {0, };            // Acceleration NED Frame
     float acc_ned_est[3] = {0, };        // Acceleration NED Frame Excepted gravity 
     static int32_t time_sec = 0;
-    static double gDist = 0.0;
     double del_dist_deg = 0.0;
     // flag_plug_off true는 차량 전원이 차단되거나 상시 전원의 차량의 경우 슬립모드 진입순간에 발생함
     // gnss[0] == 0은 zeroGPS인 상황
@@ -51,25 +47,20 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     if(flag_gnss_state == true){
         Pos_IMU[0] = pos_gnss_data[0];
         Pos_IMU[1] = pos_gnss_data[1];
-        memcpy(preGPS, curGPS, sizeof(curGPS));
-        memcpy(curGPS, pos_gnss_data, sizeof(curGPS));
-        gDist = 0.0;
         dist = 0.0;   
     }
     
     if(flag_plug_off == true && flag_gnss_state == false){
         // 지하주차장의 경우 zeroGPS인 상황에서 짧게는 수백미터에서 길게는 수키로의 주행거리가 측정된다.
-        // 전원 ON & zeroGPS -> IMU 기반의 이동거리 계산 후 전원 OFF면 마지막으로 전송된 GPS 데이터의 위도값에 계산된 Distance를 Degree로 변환하여
+        // 전원 ON & zeroGPS -> IMU 기반의 이동거리 계산 후 전원 OFF면 마지막으로 전송된 GPS 
+        // 데이터의 위도값에 계산된 Distance를 Degree로 변환하여
         // 더해준 후 서버로 전송하는 마지막 버퍼를 통해 서버로 전송
-        
-        del_dist_deg = 0.00001 / 1.11 * dist; // meter to degree
-        //Pos_IMU[0] += del_dist_deg;
-        //dist = 0.0;
 
-        //pos_gnss_data[0] = Pos_IMU[0];
-        //pos_gnss_data[1] = Pos_IMU[1];
+        // Total Distance limit => 1000 meter
+        if(dist > 1000.0) dist = 1000.0;
+        del_dist_deg = 0.00001 / 1.11 * dist; // meter to degree
         /* push adjusted navigation data */
-        printf("$IOPE %f %f\n", Pos_IMU[0], Pos_IMU[1]);
+        //printf("$IOPE %f %f\n", Pos_IMU[0], Pos_IMU[1]);
         return del_dist_deg;
     }
     
@@ -84,16 +75,13 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     static int32_t MedData_acc[3] = {0, };
     static int32_t MedData_gyro[3] = {0, };
     static int32_t acc_lpf[3] = {0, }, gyro_lpf[3] = {0, };
-    // 2 - 1. MEDIAN FILTER
+    // 2 - 1. Median Filter
     MedianFilter(acc, gyro, MedData_acc, MedData_gyro);
-    //MedData_acc[0] = (int32_t)(acc[0] * sf_gyro);
-    //MedData_acc[1] = (int32_t)(acc[1] * sf_gyro);
-    //MedData_acc[2] = (int32_t)(acc[2] * sf_gyro);
     MedData_gyro[0] = (int32_t)(gyro[0] * sf_gyro);
     MedData_gyro[1] = (int32_t)(gyro[1] * sf_gyro);
     MedData_gyro[2] = (int32_t)(gyro[2] * sf_gyro);
 
-    // 2 - 2. LOW PASS FILTER
+    // 2 - 2. Low Pass Filter
     if(acc_lpf[0] == 0 && gyro_lpf[0] == 0 && acc_lpf[1] == 0) {
         acc_lpf[0] = (int32_t)(acc[0] * sf_acc);
         acc_lpf[1] = (int32_t)(acc[1] * sf_acc);
@@ -110,13 +98,14 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         //high_pass_filter(MedData_gyro,gyro_lpf,pGyro);
         //memcpy(pGyro, MedData_gyro, sizeof(MedData_gyro));
     }
+    /*
     printf("$ACC %f %f %f\n",
             acc[0], acc[1], acc[2],
             acc_lpf[0],acc_lpf[1],acc_lpf[2]);
     printf("$GYRO %f %f %f\n",
             gyro[0], gyro[1], gyro[2],
             gyro_lpf[0],gyro_lpf[1],gyro_lpf[2]);
-
+    */
     // 3. Attitude Reference System Using EKF
     float *x_est_ars;
     float qut[4] ={0, };
@@ -129,7 +118,6 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     gyro_est[2] = gyro_lpf[2] - (int32_t)(bias_gyro[2]*sf_gyro*DEG2RAD);
     
     x_est_ars = kf_ars_loop(acc_lpf, gyro_est, diff_time);
-    //x_est_ars[6] = 0;
     memcpy(qut, x_est_ars, sizeof(qut));
     memcpy(pre_bias, bias_gyro, sizeof(pre_bias));
     memcpy(bias_gyro, (x_est_ars + 4), sizeof(bias_gyro));
@@ -149,77 +137,59 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     bias_gyro[0] *= RAD2DEG;
     bias_gyro[1] *= RAD2DEG;
     bias_gyro[2] *= RAD2DEG;
+    /*
     printf("$ARS %f %f %f %f %f %f\n", 
             euler[0], euler[1], euler[2],
             bias_gyro[0],bias_gyro[1],bias_gyro[2]);
+    */
     float C_n2b[3][3] = {0, }, C_b2n[3][3] = {0, };
     qut2dcm(qut, C_n2b);
     Transpose_MAT_3(C_n2b, C_b2n);
 
-    float acc_lpf_f[3] = {0, };
-    acc_lpf_f[0] = (float)(acc_lpf[0]/sf_acc);
-    acc_lpf_f[1] = (float)(acc_lpf[1]/sf_acc);
-    acc_lpf_f[2] = (float)(acc_lpf[2]/sf_acc);
-    
-    //float norm_acc_lpf = 0.0;
-    //norm_acc_lpf = norm_vec(3, acc_lpf_f);
-    memset(acc_ned, 0, sizeof(acc_ned));
+    float facc_lpf[3] = {0, };
+    facc_lpf[0] = (float)(acc_lpf[0]/sf_acc);
+    facc_lpf[1] = (float)(acc_lpf[1]/sf_acc);
+    facc_lpf[2] = (float)(acc_lpf[2]/sf_acc);
+
     // Body to NED(ACC)
-    dot_mat_vec(acc_ned, C_b2n, acc_lpf_f, 3);
+    memset(acc_ned, 0, sizeof(acc_ned));
+    dot_mat_vec(acc_ned, C_b2n, facc_lpf, 3);
+
     // 5. Calibration Accelerometer
     memset(acc_ned_est,0,sizeof(acc_ned_est));
     static float cNormAcc = 0.0;
     static float pNormAcc = 0.0;
-    pNormAcc = cNormAcc;
-    ACC_Calib(acc_ned, acc_ned_est, 100);
+    
+    ACC_Calib(acc_ned, acc_ned_est, 50);
+    /*
     printf("$ACC_NED %f %f %f %f %f %f", 
             acc_ned[0], acc_ned[1], acc_ned[2],
             acc_ned_est[0], acc_ned_est[1], acc_ned_est[2]);
+    */
+    pNormAcc = cNormAcc;
     cNormAcc = norm_vec(3, acc_ned_est);
-
-    float err_norm_acc_est;
-    err_norm_acc_est = fabsf(cNormAcc - pNormAcc);
     
     // 6. Estimation Pos & Vel Using RK4
-    if (err_norm_acc_est < 2){
+    if (fabsf(cNormAcc - pNormAcc) < 2){
         Estimation_State(bias_gyro, pre_bias, cnt_ars,
                     acc_ned, acc_ned_est, gyro_est);
         
     }
     if (Pos_IMU[0] >= 30.0 && flag_gnss_state == false) {
         //double del_dist_deg = 0.0;
-        
+        static uint32_t one_sec = 0;
         static uint8_t cnt_print = 0;
         dist += del_dist;
-        
+        one_sec += diff_time;
+        // Distance limit during 1sec => 8 meter
+        if(one_sec > 990){
+            if (dist > 8.0) dist = 8.0;
+        } 
         if (cnt_print > 100) {
             printf("IMU DIST : %f meter\n", dist);
             //printf("GPS TEST : %f %f \n", preGPS[0], curGPS[0]);
             cnt_print = 0;
         }
-        else cnt_print++;
-        /*
-        static uint8_t cnt_test = 0;
-        if(cnt_test > 500)
-        {
-            dist += 0.2;
-            gDist += 0.2;
-        }
-        else cnt_test++;
-        
-        if(preGPS[0] != 0 && curGPS[0] != 0){
-            double dist_gps = 0.0;
-            dist_gps = calculate_dist(curGPS[0], curGPS[1], 
-                        preGPS[0], preGPS[1]);
-            if (fabs(dist_gps - dist) > 
-                    0.2*fabs(dist_gps)){
-                dist *= 0.8;
-            }
-        }*/
-
-        //dist += 0.1;
-        //del_dist_deg = 0.00001 / 1.11 * (dist); // meter to degree
-        gDist = dist;
         del_dist = 0;
     }
     del_dist_deg = 0.00001 / 1.11 * (dist);// meter to degree
@@ -239,24 +209,7 @@ void imu_unit_conv(float *acc, float *gyro){
 }
 
 void gyro_offset_elimination(float *gyro){
-    // 1 - 1. Insert Buffer
-    //static float buf_gyro[N_buf][3] = {0, };
-    //float acc_temp_x, acc_temp_y, acc_temp_z;
-    /*
-    for(int i = N_buf - 2 ; i >= 0; i--)
-    {  
-        // GYRO
-        buf_gyro[i][0] = buf_gyro[i + 1][0];
-        buf_gyro[i][1] = buf_gyro[i + 1][1];
-        buf_gyro[i][2] = buf_gyro[i + 1][2];
-    }
-
-    buf_gyro[49][0] = gyro[0];
-    buf_gyro[49][1] = gyro[1];
-    buf_gyro[49][2] = gyro[2];
-    */
-
-    // 1 - 2. OFFSET Elimination
+    // 1 - 1. OFFSET Elimination
     static int gyro_offset_cnt = 0;
     static float GYRO_OFFSET_VAL[3] = {0.0, };
     if (gyro_offset_cnt < GYRO_OFFSET_NUM){
@@ -282,8 +235,8 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
                          uint8_t cnt_ars){
    
     // differential current and previous estimation bias value
-    static float buf[100] = {0, };
-    static float cst_stop = 0.04;
+    static float buf[50] = {0, };
+    static float cst_stop = 0.07;
     static uint8_t flag_stop_cst = false;
     static int cnt_diff_bias = 0;
     float diff_bias = 0.0; 
@@ -291,26 +244,26 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
 
     if(flag_stop_cst == false){
         //memmove(buf, buf+1, sizeof(buf)-sizeof(float));
-        for(int i = 0; i<99 ;i++)
+        for(int i = 0; i < 50 ;i++)
         {
             buf[i] = buf[i+1];
         }
-        buf[99] = diff_bias;
+        buf[49] = diff_bias;
         if (buf[0] != 0.0) {
             float mean_cst_stop = 0.0;
-            for(int i = 0; i < 100;i++){
+            for(int i = 0; i < 50;i++){
                 mean_cst_stop += buf[i];
             }
-             cst_stop = mean_cst_stop / 100.0 * 3.0;
+             cst_stop = mean_cst_stop / 50.0 * 3.0;
              if(cst_stop < 0.02) cst_stop = 0.02;
-             else if(cst_stop > 0.05) cst_stop = 0.05;
+             else if(cst_stop > 0.07) cst_stop = 0.07;
              flag_stop_cst = true;
              memset(buf, 0, sizeof(buf));
         }
     }
     
     if(diff_bias < cst_stop){ //0.02 IG, 0.04 Kasper, 0.05 ~ 0.07 QM3
-        if(cnt_diff_bias >= 100){
+        if(cnt_diff_bias >= 50){
             flag_car_stop = true;
             cnt_diff_bias = 0;
             //flag_stop_cst = false;
@@ -366,13 +319,13 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         }*/ 
         // 221205, Roation without Car moving 
         float nGyro = 0.0;                   // norm of Anguler rate
-        float gyro_lpf_f[3] = {0, };
-        gyro_lpf_f[0] = (float)(gyro_lpf[0]/sf_acc);
-        gyro_lpf_f[1] = (float)(gyro_lpf[1]/sf_acc);
-        gyro_lpf_f[2] = (float)(gyro_lpf[2]/sf_acc);
-        nGyro = norm_vec(3, gyro_lpf_f); //RAD
-        float diff_bias = 0.0; 
-        diff_bias = fabs(bias_gyro[0] - pre_bias[0]);
+        float fgyro_lpf[3] = {0, };
+        fgyro_lpf[0] = (float)(gyro_lpf[0]/sf_acc);
+        fgyro_lpf[1] = (float)(gyro_lpf[1]/sf_acc);
+        fgyro_lpf[2] = (float)(gyro_lpf[2]/sf_acc);
+        nGyro = norm_vec(3, fgyro_lpf); //RAD
+        //float diff_bias = 0.0; 
+        //diff_bias = fabs(bias_gyro[0] - pre_bias[0]);
         if(nGyro > 40.0*DEG2RAD){
             del_dist = 0.0;
             cnt_ars = 0;
