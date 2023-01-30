@@ -179,17 +179,22 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         //double del_dist_deg = 0.0;
         static uint32_t one_sec = 0;
         static uint8_t cnt_print = 0;
-        dist += del_dist;
+        static double dist_1sec = 0.0;
+        //dist += del_dist;
+        dist_1sec += del_dist;
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
         if(one_sec > 990){
-            if (dist > 8.0) dist = 8.0;
+            if (dist_1sec > 8.0) dist_1sec = 8.0;
+            dist += dist_1sec;
+            dist_1sec = 0;
         } 
         if (cnt_print > 100) {
             printf("IMU DIST : %f meter\n", dist);
             //printf("GPS TEST : %f %f \n", preGPS[0], curGPS[0]);
             cnt_print = 0;
         }
+        else cnt_print++;
         del_dist = 0;
     }
     del_dist_deg = 0.00001 / 1.11 * (dist);// meter to degree

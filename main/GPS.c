@@ -10,7 +10,7 @@ extern double Dist_IMU_DEG;
 void mosa_gps_push_cb(uint32_t lat, uint32_t lon, 
 int32_t alt, uint32_t speed, uint32_t acc)
 {
-    printf("$GPS %d %d %d %d %d", lat, lon, alt, speed, acc);
+    printf("$GPS %d %d %d %d %d\n", lat, lon, alt, speed, acc);
     uint32_t navi_lat, navi_lon;
     float navi_acc[3], navi_gyro[3];
      /* get imu data */
@@ -22,6 +22,12 @@ int32_t alt, uint32_t speed, uint32_t acc)
         if(flag_power_off == true){
             navi_lat = (uint32_t)((POS_Result[0]+Dist_IMU_DEG/2.0)*100000);
             navi_lon = (uint32_t)((POS_Result[1]+Dist_IMU_DEG/2.0)*100000);
+            navi_gyro[0] = 1.0/100.0;
+            navi_gyro[1] = 2.0/100.0;
+            navi_gyro[2] = 3.0/100.0;
+            navi_acc[0] = 1.0;
+            navi_acc[1] = 2.0;
+            navi_acc[2] = 3.0;
             GPS_navi_push(navi_lat, navi_lon, navi_acc, navi_gyro);
         }
         flag_gnss_state = false;

@@ -688,6 +688,8 @@ _Python3_EXECUTABLE:INTERNAL=/Users/jm.kim/.espressif/python_env/idf5.0_py3.9_en
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;9;12;32;;;/Users/jm.kim/opt/anaconda3/lib/python3.9;/Users/jm.kim/opt/anaconda3/lib/python3.9;/Users/jm.kim/.espressif/python_env/idf5.0_py3.9_env/lib/python3.9/site-packages;/Users/jm.kim/.espressif/python_env/idf5.0_py3.9_env/lib/python3.9/site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=3c847b4ea57666cd4873d2b0b7314359
+//Interpreter reason failure
+_Python3_Interpreter_REASON_FAILURE:INTERNAL=
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
 

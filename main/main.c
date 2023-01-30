@@ -49,6 +49,12 @@ void mosa_power_off_cb(int plug_off)
             uint32_t navi_lat, navi_lon;
             navi_lat = (uint32_t)((POS_Result[0]+Dist_IMU_DEG/2.0)*100000);
             navi_lon = (uint32_t)((POS_Result[1]+Dist_IMU_DEG/2.0)*100000);
+            f_gyro[0] = 1.0/100.0;
+            f_gyro[1] = 2.0/100.0;
+            f_gyro[2] = 3.0/100.0;
+            f_acc[0] = 1.0;
+            f_acc[1] = 2.0;
+            f_acc[2] = 3.0;
             GPS_navi_push(navi_lat, navi_lon, f_acc, f_gyro);
             printf("IOPE START ---------________-----------\n");
         }
