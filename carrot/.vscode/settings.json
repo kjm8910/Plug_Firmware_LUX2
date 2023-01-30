@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "imu_dist.h": "c",
-        "mosa.h": "c",
-        "imu_dist_loop.h": "c"
-    },
-    "idf.flashType": "JTAG",
-    "idf.port": "/dev/cu.usbmodem21201"
-}
