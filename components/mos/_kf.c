@@ -152,12 +152,12 @@ void Kalman_Gain(int32_t acc_lpf[3]){
     float norm_err = 0.0;
     norm_err = Gravity - acc_norm;
     //memmove(err_acc_save, err_acc_save + 1, sizeof(err_acc_save));
-  
+
     for (int i = 0 ; i < 9; i++)
     {
         err_acc_save[i] = err_acc_save[i+1];
     }
-    err_acc_save[9] = powf(norm_err,4);
+    err_acc_save[9] = powf(norm_err, 2);
     float R_k_[3][3] = {0, };
     if (err_acc_save[0] != 0) {
         float err_sum = 0.0, alpha = 1e-5, err = 0.0;
@@ -189,6 +189,9 @@ void Kalman_Gain(int32_t acc_lpf[3]){
     }
     err_sum = expf(alpha*err/10.0);
     */
+    memset(C_n2b, 0, sizeof(C_n2b));
+    memset(C_b2n, 0, sizeof(C_b2n));
+    
     qut2dcm(qut, C_n2b);
     Transpose_MAT_3(C_n2b, C_b2n);
     dot_mat_vec(acc_ref_b, C_n2b, acc_ref, 3);

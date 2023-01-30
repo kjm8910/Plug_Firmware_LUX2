@@ -47,7 +47,8 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     if(flag_gnss_state == true){
         Pos_IMU[0] = pos_gnss_data[0];
         Pos_IMU[1] = pos_gnss_data[1];
-        dist = 0.0;   
+        dist = 0.0;
+        del_dist = 0.0;
     }
     
     if(flag_plug_off == true && flag_gnss_state == false){
@@ -123,7 +124,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     memcpy(bias_gyro, (x_est_ars + 4), sizeof(bias_gyro));
 
     static int cnt_ars = 0;
-    if(cnt_ars < 300){
+    if(cnt_ars < 150){
         cnt_ars++;
         flag_car_stop = true;
         return 0;
@@ -202,7 +203,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
 }
 
 void imu_unit_conv(float *acc, float *gyro){
-    // IMU Unit Conversation(Acc, Gyro)
+    // IMU Unit Conversation(Ac 
     // g to m/s^2
     acc[0] *= Gravity;
     acc[1] *= Gravity;
