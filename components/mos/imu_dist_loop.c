@@ -187,7 +187,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
         if(one_sec > 990){
-            if (dist_1sec > 10.0) dist_1sec = 10.0;
+            if (dist_1sec > 8.0) dist_1sec = 8.0;
             
             dist += dist_1sec;
             dist_1sec = 0.0;
