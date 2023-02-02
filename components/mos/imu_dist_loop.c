@@ -8,15 +8,13 @@
 // OutPut : Filtering Data, Dist, etc
 // https://www.notion.so/08aac645f9a143489406a3f515fd0cf6
 // 프로토콜 참고
-// Test Finn #1
+
 #include "imu_dist_loop.h"
-//#include "nrf_log.h"
-//#include "nrf_log_ctrl.h"
-//#include "nrf_log_default_backends.h"
+
 extern double del_dist = 0.0;
 extern uint8_t flag_car_stop = false;
 extern double dist = 0.0;
-extern float dt = 0.01;
+extern float dt = 0.02;
 extern double del_deg_pos[2] = {0,};
 
 void imu_unit_conv(float *acc, float *gyro);

@@ -2,6 +2,7 @@
     "idf.adapterTargetName": "esp32c3",
     "files.associations": {
         "imu_dist_loop.h": "c",
-        "imu_dist.h": "c"
+        "imu_dist.h": "c",
+        "mosa.h": "c"
     }
 }

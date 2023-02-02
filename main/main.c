@@ -1,10 +1,13 @@
 
 #include "mosa.h"
 #include "imu_dist_loop.h"
+
 TaskHandle_t        mosa_main_task_handle;
 extern uint8_t flag_gnss_state = false;
 extern double POS_Result[2];
 extern uint8_t flag_power_off = false;
+
+
 /* application entry point */
 void app_main(void)
 {
@@ -21,7 +24,7 @@ void app_main(void)
 
     /* 2.1 setup IMU */
     IMU_setup(mosa_imu_push_cb);
-
+    
     /* 2.2 setup GPS */
     GPS_setup(mosa_gps_push_cb);
 
@@ -85,20 +88,18 @@ void mosa_main_task(void *args)
     polltimer_init(&timer);
     counter_10ms = 0;
     counter_1s = 0;
-
     while (1) {
         /* get task event; no-wait(0) */
         xTaskNotifyWait(0, ULONG_MAX, &event_bits, 0);
 
         /* 10 ms ticks */
         if (event_bits & MOSA_MAIN_EVENT_TIMER) {
-            counter_10ms++;
+            counter_10ms++;  
         }
-
         if (polltimer_timeout(&timer, 1000)) {
             counter_1s++;
         }
-
+        
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
@@ -108,6 +109,8 @@ void mosa_main_timer_cb(void *args)
 {
     xTaskNotify(mosa_main_task_handle, MOSA_MAIN_EVENT_TIMER, eSetBits);
 }
+
+
 
 
 /* end of file */
