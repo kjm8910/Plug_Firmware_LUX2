@@ -140,7 +140,7 @@ int compare(const void *T1 , const void *T2)
 } 
 void low_pass_filter(int32_t curData[3], int32_t preData[3]){
     float cData[3] = {0, }, pData[3] = {0,};
-    float alpha = 0.6;
+    float alpha = 0.8;
     for (int i = 0; i<3;i++){
         cData[i] = (float)(curData[i])/sf_acc;
         pData[i] = (float)(preData[i])/sf_acc;

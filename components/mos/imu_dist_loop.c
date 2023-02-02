@@ -43,7 +43,8 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     // gnss[0] == 0은 zeroGPS인 상황
     // 즉, zeroGPS인 상황에서 전원이 차단되어 마지막 데이터를 전송시키기 위한 상태
     static uint8_t cnt_test = 0;
-
+    //Pos_IMU[0] = 37.12345;
+    //Pos_IMU[1] = 127.0001;
     //memcpy(Pos_IMU, pos_gnss_data, sizeof(pos_gnss_data));
     if(flag_gnss_state == true){
         Pos_IMU[0] = pos_gnss_data[0];
@@ -187,7 +188,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
         if(one_sec > 990){
-            if (dist_1sec > 8.0) dist_1sec = 8.0;
+            if (dist_1sec > 10.0) dist_1sec = 10.0;
             
             dist += dist_1sec;
             dist_1sec = 0.0;
@@ -319,11 +320,11 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
                                 acc_ned[2]*acc_ned[2]);
         //printf("$ACC NED %f\t%f\t%f\t%f\t%f\t%f\t\n",acc_ned[0],acc_ned[1],acc_ned[2],
         //                        acc_ned_est[0],acc_ned_est[1],acc_ned_est[2]);
-        if(nGyro > 40){
+        if(nGyro > 40.0){
             del_dist = 0.0;
             cnt_ars = 0;
         }
-        else if(acc_ned[2] > 9.81*0.96 && acc_ned[2] < 9.81*1.04){
+        else if(acc_ned[2] > 9.81*0.94 && acc_ned[2] < 9.81*1.06){
             // Numerical Integration Using Runge Kutta 4th
             // Inuput : Acceleration
             // Output : Position & Velocity

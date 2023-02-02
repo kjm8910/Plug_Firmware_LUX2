@@ -133,7 +133,7 @@ double calculate_dist(double cLat, double cLong, double pLat, double pLong){
         CT = 2.0*atan2(sqrt(C), sqrt(1 - C));
         Dist = (double)(a*CT);//meter
 
-        if (Dist/(double)dt >= 8) Dist = 0.08;
+        if (Dist/(double)dt >= 10) Dist = 0.1;
         //else if(Dist <= 0.001) 
         //    Dist = 0.0;
         return Dist;
