@@ -12,8 +12,8 @@
 #include "imu_dist_loop.h"
 
 extern double del_dist = 0.0;
-extern uint8_t flag_car_stop = false;
 extern double dist = 0.0;
+extern uint8_t flag_car_stop = false;
 extern float dt = 0.02;
 extern double del_deg_pos[2] = {0,};
 
@@ -23,7 +23,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
                          uint8_t cnt_ars);
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
                       float *acc_ned, float *acc_ned_est, int32_t *gyro_lpf);
-
+void imu_noise_filtering(float acc[3], float gyro[3]);
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
                             uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time){
@@ -54,7 +54,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     if(flag_plug_off == true && flag_gnss_state == false){
         // 지하주차장의 경우 zeroGPS인 상황에서 짧게는 수백미터에서 길게는 수키로의 주행거리가 측정된다.
         // 전원 ON & zeroGPS -> IMU 기반의 이동거리 계산 후 전원 OFF면 마지막으로 전송된 GPS 
-        // 데이터의 위도값에 계산된 Distance를 Degree로 변환하여
+        // 데이터의 위경도 값에 계산된 Distance를 Degree로 변환하여
         // 더해준 후 서버로 전송하는 마지막 버퍼를 통해 서버로 전송
 
         // Total Distance limit => 1000 meter
@@ -71,42 +71,8 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     // 1. GYRO OFFSET Elimination
     gyro_offset_elimination(gyro);
     // 2. Filtering(IMU)
-    //  a. Median Filter
-    //  b. LPF(Low Pass Filter)
-    static int32_t MedData_acc[3] = {0, };
-    static int32_t MedData_gyro[3] = {0, };
-    static int32_t acc_lpf[3] = {0, }, gyro_lpf[3] = {0, };
-    // 2 - 1. Median Filter
-    MedianFilter(acc, gyro, MedData_acc, MedData_gyro);
-    MedData_gyro[0] = (int32_t)(gyro[0] * sf_gyro);
-    MedData_gyro[1] = (int32_t)(gyro[1] * sf_gyro);
-    MedData_gyro[2] = (int32_t)(gyro[2] * sf_gyro);
+    imu_noise_filtering(acc, gyro);
 
-    // 2 - 2. Low Pass Filter
-    if(acc_lpf[0] == 0 && gyro_lpf[0] == 0 && acc_lpf[1] == 0) {
-        acc_lpf[0] = (int32_t)(acc[0] * sf_acc);
-        acc_lpf[1] = (int32_t)(acc[1] * sf_acc);
-        acc_lpf[2] = (int32_t)(acc[2] * sf_acc);
-
-        gyro_lpf[0] = (int32_t)(gyro[0] * sf_gyro);
-        gyro_lpf[1] = (int32_t)(gyro[1] * sf_gyro);
-        gyro_lpf[2] = (int32_t)(gyro[2] * sf_gyro);
-    }
-    else{
-        low_pass_filter(MedData_acc, acc_lpf);
-        low_pass_filter(MedData_gyro, gyro_lpf);
-        //int32_t pGyro[3] = {0,};
-        //high_pass_filter(MedData_gyro,gyro_lpf,pGyro);
-        //memcpy(pGyro, MedData_gyro, sizeof(MedData_gyro));
-    }
-    /*
-    printf("$ACC %f %f %f\n",
-            acc[0], acc[1], acc[2],
-            acc_lpf[0],acc_lpf[1],acc_lpf[2]);
-    printf("$GYRO %f %f %f\n",
-            gyro[0], gyro[1], gyro[2],
-            gyro_lpf[0],gyro_lpf[1],gyro_lpf[2]);
-    */
     // 3. Attitude Reference System Using EKF
     float *x_est_ars;
     float qut[4] ={0, };
@@ -114,11 +80,11 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     static float bias_gyro[3] = {0, };
     static float pre_bias[3] = {0, };
    
-    gyro_est[0] = gyro_lpf[0] - (int32_t)(bias_gyro[0]*sf_gyro*DEG2RAD);
-    gyro_est[1] = gyro_lpf[1] - (int32_t)(bias_gyro[1]*sf_gyro*DEG2RAD);
-    gyro_est[2] = gyro_lpf[2] - (int32_t)(bias_gyro[2]*sf_gyro*DEG2RAD);
+    gyro_est[0] = gyro[0] - (int32_t)(bias_gyro[0]*sf_gyro*DEG2RAD);
+    gyro_est[1] = gyro[1] - (int32_t)(bias_gyro[1]*sf_gyro*DEG2RAD);
+    gyro_est[2] = gyro[2] - (int32_t)(bias_gyro[2]*sf_gyro*DEG2RAD);
     
-    x_est_ars = kf_ars_loop(acc_lpf, gyro_est);
+    x_est_ars = kf_ars_loop(acc, gyro_est);
     memcpy(qut, x_est_ars, sizeof(qut));
     memcpy(pre_bias, bias_gyro, sizeof(pre_bias));
     memcpy(bias_gyro, (x_est_ars + 4), sizeof(bias_gyro));
@@ -148,9 +114,9 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     Transpose_MAT_3(C_n2b, C_b2n);
 
     float facc_lpf[3] = {0, };
-    facc_lpf[0] = (float)(acc_lpf[0]/sf_acc);
-    facc_lpf[1] = (float)(acc_lpf[1]/sf_acc);
-    facc_lpf[2] = (float)(acc_lpf[2]/sf_acc);
+    facc_lpf[0] = (float)(acc[0]/sf_acc);
+    facc_lpf[1] = (float)(acc[1]/sf_acc);
+    facc_lpf[2] = (float)(acc[2]/sf_acc);
 
     // Body to NED(ACC)
     memset(acc_ned, 0, sizeof(acc_ned));
@@ -161,7 +127,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     static float cNormAcc = 0.0;
     static float pNormAcc = 0.0;
     
-    ACC_Calib(acc_ned, acc_ned_est, 50);
+    ACC_Calib(acc_ned, acc_ned_est, 25);
     /*
     printf("$ACC_NED %f %f %f %f %f %f", 
             acc_ned[0], acc_ned[1], acc_ned[2],
@@ -244,7 +210,6 @@ void gyro_offset_elimination(float *gyro){
 
 void define_vehicle_stop(float *bias_gyro, float *pre_bias, 
                          uint8_t cnt_ars){
-   
     // differential current and previous estimation bias value
     static float buf[50] = {0, };
     static float cst_stop = 0.07;
@@ -356,4 +321,44 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
     
 
     memcpy(pX_est, cX_est, sizeof(cX_est));
+}
+
+void imu_noise_filtering(float acc[3], float gyro[3]){
+    //  a. Median Filter
+    //  b. LPF(Low Pass Filter)
+    static int32_t MedData_acc[3] = {0, };
+    static int32_t MedData_gyro[3] = {0, };
+    static int32_t acc_lpf[3] = {0, }, gyro_lpf[3] = {0, };
+    // 2 - 1. Median Filter
+    MedianFilter(acc, gyro, MedData_acc, MedData_gyro);
+    MedData_gyro[0] = (int32_t)(gyro[0] * sf_gyro);
+    MedData_gyro[1] = (int32_t)(gyro[1] * sf_gyro);
+    MedData_gyro[2] = (int32_t)(gyro[2] * sf_gyro);
+
+    // 2 - 2. Low Pass Filter
+    if(acc_lpf[0] == 0 && gyro_lpf[0] == 0 ){//&& acc_lpf[1] == 0) {
+        acc_lpf[0] = (int32_t)(acc[0] * sf_acc);
+        acc_lpf[1] = (int32_t)(acc[1] * sf_acc);
+        acc_lpf[2] = (int32_t)(acc[2] * sf_acc);
+
+        gyro_lpf[0] = (int32_t)(gyro[0] * sf_gyro);
+        gyro_lpf[1] = (int32_t)(gyro[1] * sf_gyro);
+        gyro_lpf[2] = (int32_t)(gyro[2] * sf_gyro);
+    }
+    else{
+        low_pass_filter(MedData_acc, acc_lpf);
+        low_pass_filter(MedData_gyro, gyro_lpf);
+        //high_pass_filter(MedData_gyro,gyro_lpf,pGyro);
+        //memcpy(pGyro, MedData_gyro, sizeof(MedData_gyro));
+    }
+    memcpy(acc, acc_lpf, sizeof(acc));
+    memcpy(gyro, gyro_lpf, sizeof(gyro));
+    /*
+    printf("$ACC %f %f %f\n",
+            acc[0], acc[1], acc[2],
+            acc_lpf[0],acc_lpf[1],acc_lpf[2]);
+    printf("$GYRO %f %f %f\n",
+            gyro[0], gyro[1], gyro[2],
+            gyro_lpf[0],gyro_lpf[1],gyro_lpf[2]);
+    */
 }

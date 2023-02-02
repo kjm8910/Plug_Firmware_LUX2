@@ -6,16 +6,6 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
-/*
-#include "devcfg.h"
-#include "nrf_twi.h"
-#include "icm_20602.h"
-#include "icm_42670_p.h"
-#include "epoch.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"*/
 
 #include "_kf.h"
 #include "_matrix.h"
@@ -25,7 +15,7 @@
 #define RAD2DEG                             180.0 / 3.141592
 #define DEG2RAD                             3.141592 / 180.0
 #define Gravity                             9.80665   // m / s2
-#define N_Med                               10
+#define N_Med                               5
 #define sf_acc                              1000000.0
 #define sf_att                              1000000.0  
 #define sf_dcm                              1000000.0
@@ -62,4 +52,5 @@ void rk4_dist(double rk4_x_est[6], float acc_ned[3],
             float acc_ned_est[3]);
 void qut2Rot(float *qut, float Rot[3][3]);
 double meter2degree(double meter, double degree);
+
 #endif
