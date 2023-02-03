@@ -83,24 +83,23 @@ extern float main_f_acc[3];
 extern float main_f_gyro[3];
 void mosa_iope_task(void *args)
 {
-    static uint32_t cnt_iope = 0;
-    uint32_t event_bits_imu;
-    
+    //static uint32_t cnt_iope = 0;
+
     while (1) {
-        //xTaskNotifyWait(0, ULONG_MAX, &event_bits_imu, 0);
-        if(flag_imu_state == true){
+        //if(flag_imu_state == true){
             
-           
             //if (cnt_iope > 3000){
             //    Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, POS_Result, 
             //        flag_power_off, flag_gnss_state, time_imu);
             //    printf("$TEST IOPE\n");
             //} else cnt_iope++;
-            printf("TEST %f, %f, %f\n",main_f_acc[0],main_f_acc[1],main_f_acc[2]);
-            flag_imu_state = false;
-        }
-        
-        vTaskDelay(pdMS_TO_TICKS(5));
+            //printf("TEST %f, %f, %f\n",main_f_acc[0],main_f_acc[1],main_f_acc[2]);
+            //flag_imu_state = false;
+            
+        //}
+        printf("TEST \n");
+        vTaskDelay(pdMS_TO_TICKS(10));
+       
     }
 }
 
@@ -138,12 +137,6 @@ void mosa_main_task(void *args)
 void mosa_main_timer_cb(void *args)
 {
     xTaskNotify(mosa_main_task_handle, MOSA_MAIN_EVENT_TIMER, eSetBits);
-    
-}
-
-void mosa_iope_timer_cb(void *args)
-{
-    xTaskNotify(mosa_imu_task_handle, MOSA_MAIN_EVENT_TIMER, eSetBits);
     
 }
 
