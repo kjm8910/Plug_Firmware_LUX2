@@ -216,23 +216,24 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     static uint8_t flag_stop_cst = false;
     static int cnt_diff_bias = 0;
     float diff_bias = 0.0;
-    float diff_bias_2 = 0.0; 
+    uint8_t N_ars = 50;
+    //float diff_bias_2 = 0.0; 
     diff_bias = fabs(bias_gyro[0] - pre_bias[0]);//deg
-    diff_bias_2 = fabs(bias_gyro[1] - pre_bias[1]);//deg
+    //diff_bias_2 = fabs(bias_gyro[1] - pre_bias[1]);//deg
     //printf("$bias diff %f\t%f\n", diff_bias, diff_bias_2);
     if(flag_stop_cst == false){
         //memmove(buf, buf+1, sizeof(buf)-sizeof(float));
-        for(int i = 0; i < 50 ;i++)
+        for(int i = 0; i < N_ars ;i++)
         {
             buf[i] = buf[i+1];
         }
         buf[49] = diff_bias;
         if (buf[0] != 0.0) {
             float mean_cst_stop = 0.0;
-            for(int i = 0; i < 50;i++){
+            for(int i = 0; i < N_ars;i++){
                 mean_cst_stop += buf[i];
             }
-             cst_stop = mean_cst_stop / 50.0 * 3.0;
+             cst_stop = mean_cst_stop / (float)N_ars * 3.0;
              if(cst_stop < 0.02) cst_stop = 0.02;
              else if(cst_stop > 0.07) cst_stop = 0.07;
              flag_stop_cst = true;
@@ -241,7 +242,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     }
     
     if(diff_bias < cst_stop){ //0.02 IG, 0.04 Kasper, 0.05 ~ 0.07 QM3
-        if(cnt_diff_bias >= 50){
+        if(cnt_diff_bias >= N_ars){
             flag_car_stop = true;
             cnt_diff_bias = 0;
             //flag_stop_cst = false;
