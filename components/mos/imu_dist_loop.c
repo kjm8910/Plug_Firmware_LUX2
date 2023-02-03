@@ -352,8 +352,8 @@ void imu_noise_filtering(float acc[3], float gyro[3]){
         //high_pass_filter(MedData_gyro,gyro_lpf,pGyro);
         //memcpy(pGyro, MedData_gyro, sizeof(MedData_gyro));
     }
-    memcpy(acc, acc_lpf, sizeof(acc));
-    memcpy(gyro, gyro_lpf, sizeof(gyro));
+    memcpy(acc, acc_lpf, sizeof(acc_lpf));
+    memcpy(gyro, gyro_lpf, sizeof(gyro_lpf));
     /*
     printf("$ACC %f %f %f\n",
             acc[0], acc[1], acc[2],
