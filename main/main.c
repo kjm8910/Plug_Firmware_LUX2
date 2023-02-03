@@ -6,7 +6,7 @@ TaskHandle_t        mosa_main_task_handle;
 extern uint8_t flag_gnss_state = false;
 extern double POS_Result[2];
 extern uint8_t flag_power_off = false;
-
+extern double Dist_IMU_DEG = 0.0;
 
 /* application entry point */
 void app_main(void)
@@ -38,7 +38,7 @@ void app_main(void)
     APP_start();
 }
 
-extern double Dist_IMU_DEG = 0.0;
+
 void mosa_power_off_cb(int plug_off)
 {
     if (plug_off) {
@@ -108,6 +108,7 @@ void mosa_main_task(void *args)
 void mosa_main_timer_cb(void *args)
 {
     xTaskNotify(mosa_main_task_handle, MOSA_MAIN_EVENT_TIMER, eSetBits);
+    
 }
 
 
