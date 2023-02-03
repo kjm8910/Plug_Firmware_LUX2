@@ -7,9 +7,10 @@
 extern void mosa_init();
 extern int mosa_cmd_init();
 extern void mosa_main_task(void *args);
+extern void mosa_iope_task(void *args);
 extern void mosa_power_off_cb(int plug_off);
 extern void mosa_main_timer_cb(void *args);
-
+extern void mosa_iope_timer_cb(void *args);
 
 /* IMU.c */
 extern void mosa_imu_init();

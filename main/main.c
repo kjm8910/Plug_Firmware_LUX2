@@ -3,11 +3,13 @@
 #include "imu_dist_loop.h"
 
 TaskHandle_t        mosa_main_task_handle;
+TaskHandle_t        mosa_imu_task_handle;
 extern uint8_t flag_gnss_state = false;
-extern double POS_Result[2];
+extern uint8_t flag_imu_state = false;
 extern uint8_t flag_power_off = false;
 extern double Dist_IMU_DEG = 0.0;
-
+extern double POS_Result[2];
+extern uint32_t time_imu = 0;
 /* application entry point */
 void app_main(void)
 {
@@ -72,7 +74,34 @@ void mosa_init()
     /* mos_main_task */
     xTaskCreate(mosa_main_task, "mosa_main", MOSA_MAIN_TASK_STACK_SIZE,
             NULL, MOSA_MAIN_TASK_PRI, &mosa_main_task_handle);
+    /* mos_IOPE_task */
+    xTaskCreate(mosa_iope_task, "mosa_iope", MOSA_MAIN_TASK_STACK_SIZE,
+            NULL, MOSA_MAIN_TASK_PRI_IOPE, &mosa_imu_task_handle);
 
+}
+extern float main_f_acc[3];
+extern float main_f_gyro[3];
+void mosa_iope_task(void *args)
+{
+    static uint32_t cnt_iope = 0;
+    uint32_t event_bits_imu;
+    
+    while (1) {
+        //xTaskNotifyWait(0, ULONG_MAX, &event_bits_imu, 0);
+        if(flag_imu_state == true){
+            
+           
+            //if (cnt_iope > 3000){
+            //    Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, POS_Result, 
+            //        flag_power_off, flag_gnss_state, time_imu);
+            //    printf("$TEST IOPE\n");
+            //} else cnt_iope++;
+            printf("TEST %f, %f, %f\n",main_f_acc[0],main_f_acc[1],main_f_acc[2]);
+            flag_imu_state = false;
+        }
+        
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
 }
 
 void mosa_main_task(void *args)
@@ -98,6 +127,7 @@ void mosa_main_task(void *args)
         }
         if (polltimer_timeout(&timer, 1000)) {
             counter_1s++;
+            //printf("TEST %d\n",counter_1s);
         }
         
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -111,7 +141,11 @@ void mosa_main_timer_cb(void *args)
     
 }
 
-
+void mosa_iope_timer_cb(void *args)
+{
+    xTaskNotify(mosa_imu_task_handle, MOSA_MAIN_EVENT_TIMER, eSetBits);
+    
+}
 
 
 /* end of file */

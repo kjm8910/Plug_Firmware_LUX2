@@ -4,7 +4,7 @@
 
 #define MOSA_MAIN_TASK_STACK_SIZE            (1024*2)        // 2048 K
 #define MOSA_MAIN_TASK_PRI                   10           
-
+#define MOSA_MAIN_TASK_PRI_IOPE              22
 
 #define MOSA_MAIN_TIMER_TICK                 10
 #define MOSA_MAIN_TIMER_MS_TO_TICK(m)        ((m)/MOSA_MAIN_TIMER_TICK)
