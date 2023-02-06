@@ -2,7 +2,7 @@
 #include "imu_dist_loop.h"
 kf_ars_t kf_ars;
 extern float dt;  
-float* kf_ars_loop(int32_t acc_lpf[3],int32_t gyro_lpf[3]){
+float* kf_ars_loop(float acc_lpf[3],float gyro_lpf[3]){
     static uint8_t flag_ars_init = false; 
     if (flag_ars_init == false) {
       // 1. Initialization
@@ -25,13 +25,13 @@ float* kf_ars_loop(int32_t acc_lpf[3],int32_t gyro_lpf[3]){
     return kf_ars.x_est;
     
 }
-void Measurement_Update(int32_t acc_lpf[3]){
+void Measurement_Update(float acc_lpf[3]){
     float qut[4] = {0, };
     memcpy(qut, kf_ars.x_est, sizeof(qut));
     float acc[3] = {0, };
-    acc[0] = (float)(acc_lpf[0] / sf_acc);
-    acc[1] = (float)(acc_lpf[1] / sf_acc);
-    acc[2] = (float)(acc_lpf[2] / sf_acc);
+    acc[0] = (float)(acc_lpf[0]);
+    acc[1] = (float)(acc_lpf[1]);
+    acc[2] = (float)(acc_lpf[2]);
     
     float C_b2n[3][3] = {0, }, C_n2b[3][3] = {0, };
     qut2dcm(qut, C_n2b);
@@ -124,7 +124,7 @@ void Measurement_Update(int32_t acc_lpf[3]){
     kf_ars.x_est[5] += kf_ars.del_x[4];
     kf_ars.x_est[6] += kf_ars.del_x[5];        
 }
-void Kalman_Gain(int32_t acc_lpf[3]){
+void Kalman_Gain(float acc_lpf[3]){
     float Hk[3][6] = {0, }, H_T[6][3] = {0, };
     float acc_ref[3] = {0,0,Gravity};
     float C_n2b[3][3] = {0, }, C_b2n[3][3] = {0, };
@@ -138,9 +138,9 @@ void Kalman_Gain(int32_t acc_lpf[3]){
     qut[3] = kf_ars.x_est[3];
     
     float acc[3] = {0, };
-    acc[0] = (float)(acc_lpf[0] / sf_acc);
-    acc[1] = (float)(acc_lpf[1] / sf_acc);
-    acc[2] = (float)(acc_lpf[2] / sf_acc);
+    acc[0] = (float)(acc_lpf[0]);
+    acc[1] = (float)(acc_lpf[1]);
+    acc[2] = (float)(acc_lpf[2]);
     float acc_norm = 0.0;
     acc_norm = sqrtf(acc[0]*acc[0] + acc[1]*acc[1] + 
                     acc[2]*acc[2]);
@@ -255,16 +255,16 @@ void Kalman_Gain(int32_t acc_lpf[3]){
     }
 
 }
-void qut_discrete(int32_t gyro[3]){
+void qut_discrete(float gyro[3]){
     
     float psi[3] = {0, }, qut[4] = {0, };
     float sin_psi, norm_gyro, cos_psi;
     float gx, gy, gz;
     //float omega[3] = {0, };
 
-    gx = (float)(gyro[0]/sf_gyro);
-    gy = (float)(gyro[1]/sf_gyro);
-    gz = (float)(gyro[2]/sf_gyro);
+    gx = (float)(gyro[0]);
+    gy = (float)(gyro[1]);
+    gz = (float)(gyro[2]);
 
     for(int i = 0;i < 4;i++){
         qut[i] = kf_ars.x_est[i];
@@ -309,7 +309,7 @@ void qut_discrete(int32_t gyro[3]){
 }
 
 
-void init_kf_ars(int32_t acc[3]){
+void init_kf_ars(float acc[3]){
     
     int32_t att_euler[3] = {0, };
     float qut[4] = {0, }, bias_gyro[3] = {0, };
@@ -370,7 +370,7 @@ void init_kf_ars(int32_t acc[3]){
     
 }
 
-void cov_discrete(int32_t gyro[3]){
+void cov_discrete(float gyro[3]){
 
     float Gamma[6][6] = {0, }, Gamma_T[6][6] = {0, };
     float I_33[3][3] = {0, };
@@ -390,9 +390,9 @@ void cov_discrete(int32_t gyro[3]){
     float skew_omega_2[3][3] = {0, };
     float const_omega_1 = 0.0, const_omega_2 = 0.0, const_omega_3 = 0.0;
 
-    fGyro[0] = (float)(gyro[0] / sf_gyro);
-    fGyro[1] = (float)(gyro[1] / sf_gyro);
-    fGyro[2] = (float)(gyro[2] / sf_gyro);
+    fGyro[0] = (float)(gyro[0]);
+    fGyro[1] = (float)(gyro[1]);
+    fGyro[2] = (float)(gyro[2]);
     
     // Phi 11
     skew_symmetirc(fGyro, skew_omega_1);

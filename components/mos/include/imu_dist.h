@@ -15,7 +15,7 @@
 #define RAD2DEG                             180.0 / 3.141592
 #define DEG2RAD                             3.141592 / 180.0
 #define Gravity                             9.80665   // m / s2
-#define N_Med                               5
+#define N_Med                               10
 #define sf_acc                              1000000.0
 #define sf_att                              1000000.0  
 #define sf_dcm                              1000000.0
@@ -39,7 +39,7 @@
 /////////////////////////////////////////////////////////////////
 void low_pass_filter(int32_t curData[3], int32_t preData[3]);
 void ComplementaryFilter(int32_t att_acc[3], int32_t att_comp[3]);
-void acc2attitude(int32_t acc[3], int32_t  arr[3]);
+void acc2attitude(float acc[3], int32_t  arr[3]);
 void gyro2attitude(int32_t gyro[3], int32_t  arr[3]);
 void system_model(double xdot[6], double x[6], double u[3], uint8_t flag);
 void MedianFilter(float acc[3], float gyro[3], int32_t MedData_acc[3], int32_t MedData_gyro[3]);

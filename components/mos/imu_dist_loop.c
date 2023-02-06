@@ -22,12 +22,15 @@ void gyro_offset_elimination(float *gyro);
 void define_vehicle_stop(float *bias_gyro, float *pre_bias, 
                          uint8_t cnt_ars);
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
-                      float *acc_ned, float *acc_ned_est, int32_t *gyro_lpf);
+                      float *acc_ned, float *acc_ned_est, float *gyro_lpf);
 void imu_noise_filtering(float acc[3], float gyro[3]);
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
                             uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time){
     dt = (float)(diff_time) / 1000.0;
+    
+    if(dt < 0.009) return 0;
+    
     //printf("$ACC %f\t%f\t%f\n",acc[0], acc[1], acc[2]);
     //printf("$GYRO %f\t%f\t%f\n",gyro[0], gyro[1], gyro[2]);
     static uint8_t flag_cross = false;
@@ -72,17 +75,16 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     gyro_offset_elimination(gyro);
     // 2. Filtering(IMU)
     imu_noise_filtering(acc, gyro);
-
     // 3. Attitude Reference System Using EKF
     float *x_est_ars;
     float qut[4] ={0, };
-    int32_t gyro_est[3] = {0, };
+    float gyro_est[3] = {0, };
     static float bias_gyro[3] = {0, };
     static float pre_bias[3] = {0, };
    
-    gyro_est[0] = gyro[0] - (int32_t)(bias_gyro[0]*sf_gyro*DEG2RAD);
-    gyro_est[1] = gyro[1] - (int32_t)(bias_gyro[1]*sf_gyro*DEG2RAD);
-    gyro_est[2] = gyro[2] - (int32_t)(bias_gyro[2]*sf_gyro*DEG2RAD);
+    gyro_est[0] = gyro[0] - (bias_gyro[0]*DEG2RAD);
+    gyro_est[1] = gyro[1] - (bias_gyro[1]*DEG2RAD);
+    gyro_est[2] = gyro[2] - (bias_gyro[2]*DEG2RAD);
     
     x_est_ars = kf_ars_loop(acc, gyro_est);
     memcpy(qut, x_est_ars, sizeof(qut));
@@ -113,23 +115,18 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     qut2dcm(qut, C_n2b);
     Transpose_MAT_3(C_n2b, C_b2n);
 
-    float facc_lpf[3] = {0, };
-    facc_lpf[0] = (float)(acc[0]/sf_acc);
-    facc_lpf[1] = (float)(acc[1]/sf_acc);
-    facc_lpf[2] = (float)(acc[2]/sf_acc);
-
     // Body to NED(ACC)
     memset(acc_ned, 0, sizeof(acc_ned));
-    dot_mat_vec(acc_ned, C_b2n, facc_lpf, 3);
+    dot_mat_vec(acc_ned, C_b2n, acc, 3);
 
     // 5. Calibration Accelerometer
     memset(acc_ned_est,0,sizeof(acc_ned_est));
     static float cNormAcc = 0.0;
     static float pNormAcc = 0.0;
     
-    ACC_Calib(acc_ned, acc_ned_est, 25);
+    ACC_Calib(acc_ned, acc_ned_est, 50);
     /*
-    printf("$ACC_NED %f %f %f %f %f %f", 
+    printf("$ACC_NED %f %f %f %f %f %f\n", 
             acc_ned[0], acc_ned[1], acc_ned[2],
             acc_ned_est[0], acc_ned_est[1], acc_ned_est[2]);
     */
@@ -137,6 +134,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     cNormAcc = norm_vec(3, acc_ned_est);
     
     // 6. Estimation Pos & Vel Using RK4
+    //printf("TEST %f\n", fabsf(cNormAcc - pNormAcc));
     if (fabsf(cNormAcc - pNormAcc) < 2){
         Estimation_State(bias_gyro, pre_bias, cnt_ars,
                     acc_ned, acc_ned_est, gyro_est);
@@ -147,11 +145,14 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         //double del_dist_deg = 0.0;
         static double dist_1sec = 0.0;
         static uint32_t one_sec = 0;
+        //printf("$DIST %f\n",del_dist);
         //dist += del_dist;
         dist_1sec += del_dist;
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
+        //printf("$TEST_IOPE %f %f\n",dist_1sec, one_sec);
         if(one_sec > 990){
+           // printf("$TEST_IOPE %f\n",dist_1sec);
             if (dist_1sec > 10.0) dist_1sec = 10.0;
             
             dist += dist_1sec;
@@ -161,7 +162,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
 
         static uint8_t cnt_print = 0;
         
-        if (cnt_print > 50) {
+        if (cnt_print >= 100) {
             printf("IMU DIST : %f meter\n", dist);
             //printf("GPS TEST : %f %f \n", preGPS[0], curGPS[0]);
             cnt_print = 0;
@@ -211,12 +212,12 @@ void gyro_offset_elimination(float *gyro){
 void define_vehicle_stop(float *bias_gyro, float *pre_bias, 
                          uint8_t cnt_ars){
     // differential current and previous estimation bias value
-    static float buf[50] = {0, };
+    static float buf[100] = {0, };
     static float cst_stop = 0.07;
     static uint8_t flag_stop_cst = false;
     static int cnt_diff_bias = 0;
     float diff_bias = 0.0;
-    uint8_t N_ars = 50;
+    uint8_t N_ars = (uint8_t)(dt*100);
     //float diff_bias_2 = 0.0; 
     diff_bias = fabs(bias_gyro[0] - pre_bias[0]);//deg
     //diff_bias_2 = fabs(bias_gyro[1] - pre_bias[1]);//deg
@@ -227,7 +228,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
         {
             buf[i] = buf[i+1];
         }
-        buf[49] = diff_bias;
+        buf[99] = diff_bias;
         if (buf[0] != 0.0) {
             float mean_cst_stop = 0.0;
             for(int i = 0; i < N_ars;i++){
@@ -242,7 +243,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     }
     
     if(diff_bias < cst_stop){ //0.02 IG, 0.04 Kasper, 0.05 ~ 0.07 QM3
-        if(cnt_diff_bias >= N_ars){
+        if(cnt_diff_bias >= N_ars*3){
             flag_car_stop = true;
             cnt_diff_bias = 0;
             //flag_stop_cst = false;
@@ -262,7 +263,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
 }
 
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
-                      float *acc_ned, float *acc_ned_est, int32_t *gyro_lpf){
+                      float *acc_ned, float *acc_ned_est, float *gyro_lpf){
     
     static double cX_est[6] = {37.41231*DEG2RAD,127.010203*DEG2RAD, 10.0, 0.0,0.0,0.0};
     static double pX_est[6] = {37.41231*DEG2RAD,127.010203*DEG2RAD, 10.0, 0.0,0.0,0.0};
@@ -275,20 +276,18 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
     //////////////////////////////////////////////////////////////////
     if(flag_car_stop == false){
         float nGyro = 0.0;                   // norm of Anguler rate
-        float fgyro_lpf[3] = {0, };
-        fgyro_lpf[0] = (float)(gyro_lpf[0]/sf_acc);
-        fgyro_lpf[1] = (float)(gyro_lpf[1]/sf_acc);
-        fgyro_lpf[2] = (float)(gyro_lpf[2]/sf_acc);
-        nGyro = norm_vec(3, fgyro_lpf) * RAD2DEG; //RAD
+        nGyro = norm_vec(3, gyro_lpf) * RAD2DEG; //RAD
         double norm_acc = sqrt(acc_ned[0]*acc_ned[0] + acc_ned[1]*acc_ned[1] + 
                                 acc_ned[2]*acc_ned[2]);
         //printf("$ACC NED %f\t%f\t%f\t%f\t%f\t%f\t\n",acc_ned[0],acc_ned[1],acc_ned[2],
         //                        acc_ned_est[0],acc_ned_est[1],acc_ned_est[2]);
-        if(nGyro > 40.0){
+        if(nGyro > 80.0){
+            //printf("TEST LOOP 1 nGyro %f\n", nGyro);
             del_dist = 0.0;
             cnt_ars = 0;
         }
         else if(acc_ned[2] > 9.81*0.94 && acc_ned[2] < 9.81*1.06){
+            //printf("TEST LOOP 2\n");
             // Numerical Integration Using Runge Kutta 4th
             // Inuput : Acceleration
             // Output : Position & Velocity
@@ -300,6 +299,7 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
             // Output : Distance (meter)
             del_dist = calculate_dist(cX_est[0], cX_est[1], 
                             pX_est[0], pX_est[1]);
+            //printf("DIST del %f\n", del_dist);
         }
         else{
             del_dist = 0;
@@ -352,8 +352,12 @@ void imu_noise_filtering(float acc[3], float gyro[3]){
         //high_pass_filter(MedData_gyro,gyro_lpf,pGyro);
         //memcpy(pGyro, MedData_gyro, sizeof(MedData_gyro));
     }
-    memcpy(acc, acc_lpf, sizeof(acc_lpf));
-    memcpy(gyro, gyro_lpf, sizeof(gyro_lpf));
+    acc[0] = (float)(acc_lpf[0])/sf_acc;
+    acc[1] = (float)(acc_lpf[1])/sf_acc;
+    acc[2] = (float)(acc_lpf[2])/sf_acc;
+    gyro[0] = (float)(gyro_lpf[0])/sf_gyro;
+    gyro[1] = (float)(gyro_lpf[1])/sf_gyro;
+    gyro[2] = (float)(gyro_lpf[2])/sf_gyro;
     /*
     printf("$ACC %f %f %f\n",
             acc[0], acc[1], acc[2],

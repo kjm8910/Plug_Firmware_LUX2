@@ -17,13 +17,13 @@
 // Compare between RTK, GNSS and IMU
 // OutPUT -> IMU DIST
 extern float dt;
-void acc2attitude(int32_t acc[3], int32_t  arr[3]){
+void acc2attitude(float acc[3], int32_t  arr[3]){
     float ax, ay, az;
     float roll, pitch;
 
-    ax = (float)(acc[0])/sf_acc;
-    ay = (float)(acc[1])/sf_acc;
-    az = (float)(acc[2])/sf_acc;
+    ax = (float)(acc[0]);
+    ay = (float)(acc[1]);
+    az = (float)(acc[2]);
 
     roll = atan2f(az, ay); // Rad
     pitch = atan2f(sqrtf(ay*ay + az*az), ax);// Rad

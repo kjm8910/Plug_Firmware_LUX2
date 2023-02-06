@@ -3,6 +3,7 @@
     "files.associations": {
         "imu_dist_loop.h": "c",
         "imu_dist.h": "c",
-        "mosa.h": "c"
+        "mosa.h": "c",
+        "_kf.h": "c"
     }
 }
