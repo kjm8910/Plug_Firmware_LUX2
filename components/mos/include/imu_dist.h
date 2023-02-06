@@ -39,8 +39,8 @@
 /////////////////////////////////////////////////////////////////
 void low_pass_filter(int32_t curData[3], int32_t preData[3]);
 void ComplementaryFilter(int32_t att_acc[3], int32_t att_comp[3]);
-void acc2attitude(float acc[3], int32_t  arr[3]);
-void gyro2attitude(int32_t gyro[3], int32_t  arr[3]);
+void acc2attitude(float acc[3], int32_t arr[3]);
+void gyro2attitude(int32_t gyro[3], int32_t arr[3]);
 void system_model(double xdot[6], double x[6], double u[3], uint8_t flag);
 void MedianFilter(float acc[3], float gyro[3], int32_t MedData_acc[3], int32_t MedData_gyro[3]);
 void GYRO_MED(float gyro[3], int32_t MedData_gyro[3]);

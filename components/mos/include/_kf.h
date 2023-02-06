@@ -32,6 +32,6 @@ void qut_discrete(float gyro[3]);
 void Kalman_Gain(float acc_lpf[3]);
 void init_kf_ars(float acc[3]);
 void cov_discrete(float gyro[3]);
-float* kf_ars_loop(float acc_lpf[3], float gyro[3]);
+float* kf_ars_loop(float acc_lpf[3], float gyro_lpf[3]);
 void Measurement_Update(float acc_lpf[3]);
 #endif

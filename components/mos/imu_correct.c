@@ -187,11 +187,10 @@ void ACC_Calib(float *acc_ned, float acc_est[3], int N_acc){
     float norm_acc = 0.0;
     
     norm_acc = sqrtf(acc_ned[0]*acc_ned[0] + acc_ned[1]*acc_ned[1]);
-    
+
     acc_est[0] = 0.0;
     acc_est[1] = 0.0;
     acc_est[2] = 0.0;
-
     if (cnt_acc < N_acc && norm_acc < 0.05){
             cnt_acc += 1;
             cal_acc[0] += acc_ned[0];
@@ -199,9 +198,9 @@ void ACC_Calib(float *acc_ned, float acc_est[3], int N_acc){
             cal_acc[2] += acc_ned[2];
         
             if (cnt_acc >= 5){
-                acc_est[0] = acc_ned[0] - cal_acc[0]/(float)cnt_acc;
-                acc_est[1] = acc_ned[1] - cal_acc[1]/(float)cnt_acc;
-                acc_est[2] = acc_ned[2] - cal_acc[2]/(float)cnt_acc;
+                acc_est[0] = acc_ned[0] - cal_acc[0]/(float)(cnt_acc);
+                acc_est[1] = acc_ned[1] - cal_acc[1]/(float)(cnt_acc);
+                acc_est[2] = acc_ned[2] - cal_acc[2]/(float)(cnt_acc);
             }
             if (cnt_acc == N_acc) flag_acc_done = true;
     }

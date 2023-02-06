@@ -3,7 +3,7 @@
 
 #define LPF_ALPHA                           0.1
 #define N_buf                               50
-#define GYRO_OFFSET_NUM                     50
+#define GYRO_OFFSET_NUM                     100
 
 // Header ////////////////////////
 #include <stdio.h>

@@ -22,7 +22,7 @@ void gyro_offset_elimination(float *gyro);
 void define_vehicle_stop(float *bias_gyro, float *pre_bias, 
                          uint8_t cnt_ars);
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
-                      float *acc_ned, float *acc_ned_est, float *gyro_lpf);
+                      float *acc_ned, float *acc_ned_est, float *gyro);
 void imu_noise_filtering(float acc[3], float gyro[3]);
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
@@ -63,8 +63,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         // Total Distance limit => 1000 meter
         if(dist > 1000.0) dist = 1000.0;
         del_dist_deg = 0.00001 / 1.11 * dist; // meter to degree
-        /* push adjusted navigation data */
-        //printf("$IOPE %f %f\n", Pos_IMU[0], Pos_IMU[1]);
+        
         return del_dist_deg;
     }
     
@@ -142,15 +141,11 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     }
     
     if (Pos_IMU[0] >= 30.0 && flag_gnss_state == false) {
-        //double del_dist_deg = 0.0;
         static double dist_1sec = 0.0;
         static uint32_t one_sec = 0;
-        //printf("$DIST %f\n",del_dist);
-        //dist += del_dist;
         dist_1sec += del_dist;
         one_sec += diff_time;
         // Distance limit during 1sec => 8 meter
-        //printf("$TEST_IOPE %f %f\n",dist_1sec, one_sec);
         if(one_sec > 990){
            // printf("$TEST_IOPE %f\n",dist_1sec);
             if (dist_1sec > 10.0) dist_1sec = 10.0;
@@ -164,7 +159,6 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         
         if (cnt_print >= 100) {
             printf("IMU DIST : %f meter\n", dist);
-            //printf("GPS TEST : %f %f \n", preGPS[0], curGPS[0]);
             cnt_print = 0;
         }
         else cnt_print++;
@@ -215,13 +209,11 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     static float buf[100] = {0, };
     static float cst_stop = 0.07;
     static uint8_t flag_stop_cst = false;
-    static int cnt_diff_bias = 0;
+    static uint16_t cnt_diff_bias = 0;
     float diff_bias = 0.0;
-    uint8_t N_ars = (uint8_t)(dt*100);
-    //float diff_bias_2 = 0.0; 
+    uint16_t N_ars = 100;
     diff_bias = fabs(bias_gyro[0] - pre_bias[0]);//deg
-    //diff_bias_2 = fabs(bias_gyro[1] - pre_bias[1]);//deg
-    //printf("$bias diff %f\t%f\n", diff_bias, diff_bias_2);
+
     if(flag_stop_cst == false){
         //memmove(buf, buf+1, sizeof(buf)-sizeof(float));
         for(int i = 0; i < N_ars ;i++)
@@ -243,7 +235,7 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
     }
     
     if(diff_bias < cst_stop){ //0.02 IG, 0.04 Kasper, 0.05 ~ 0.07 QM3
-        if(cnt_diff_bias >= N_ars*3){
+        if(cnt_diff_bias >= 150){
             flag_car_stop = true;
             cnt_diff_bias = 0;
             //flag_stop_cst = false;
@@ -263,12 +255,11 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
 }
 
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
-                      float *acc_ned, float *acc_ned_est, float *gyro_lpf){
+                      float *acc_ned, float *acc_ned_est, float *gyro){
     
     static double cX_est[6] = {37.41231*DEG2RAD,127.010203*DEG2RAD, 10.0, 0.0,0.0,0.0};
     static double pX_est[6] = {37.41231*DEG2RAD,127.010203*DEG2RAD, 10.0, 0.0,0.0,0.0};
     
-     
     cX_est[2] = 10;
     pX_est[2] = 10;
     // 바이어스 차이를 활용한 정지 상태 정의 /////////////////////////////////
@@ -276,15 +267,16 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
     //////////////////////////////////////////////////////////////////
     if(flag_car_stop == false){
         float nGyro = 0.0;                   // norm of Anguler rate
-        nGyro = norm_vec(3, gyro_lpf) * RAD2DEG; //RAD
+        nGyro = norm_vec(3, gyro) * RAD2DEG;
         double norm_acc = sqrt(acc_ned[0]*acc_ned[0] + acc_ned[1]*acc_ned[1] + 
                                 acc_ned[2]*acc_ned[2]);
         //printf("$ACC NED %f\t%f\t%f\t%f\t%f\t%f\t\n",acc_ned[0],acc_ned[1],acc_ned[2],
         //                        acc_ned_est[0],acc_ned_est[1],acc_ned_est[2]);
         if(nGyro > 80.0){
-            //printf("TEST LOOP 1 nGyro %f\n", nGyro);
+            printf("TEST LOOP 1 nGyro %f\n", nGyro);
             del_dist = 0.0;
             cnt_ars = 0;
+            //if(cnt_ars < 0) cnt_ars = 0;
         }
         else if(acc_ned[2] > 9.81*0.94 && acc_ned[2] < 9.81*1.06){
             //printf("TEST LOOP 2\n");
@@ -311,7 +303,7 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         pX_est[3]  = 0.0;
         pX_est[4]  = 0.0;
         pX_est[5]  = 0.0;
-        cnt_ars--;
+        //cnt_ars--;
         memcpy(cX_est, pX_est, sizeof(pX_est));
     }
 

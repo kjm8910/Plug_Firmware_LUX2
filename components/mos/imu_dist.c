@@ -21,9 +21,9 @@ void acc2attitude(float acc[3], int32_t  arr[3]){
     float ax, ay, az;
     float roll, pitch;
 
-    ax = (float)(acc[0]);
-    ay = (float)(acc[1]);
-    az = (float)(acc[2]);
+    ax = (acc[0]);
+    ay = (acc[1]);
+    az = (acc[2]);
 
     roll = atan2f(az, ay); // Rad
     pitch = atan2f(sqrtf(ay*ay + az*az), ax);// Rad

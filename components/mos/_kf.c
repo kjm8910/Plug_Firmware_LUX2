@@ -2,7 +2,7 @@
 #include "imu_dist_loop.h"
 kf_ars_t kf_ars;
 extern float dt;  
-float* kf_ars_loop(float acc_lpf[3],float gyro_lpf[3]){
+float* kf_ars_loop(float acc_lpf[3], float gyro_lpf[3]){
     static uint8_t flag_ars_init = false; 
     if (flag_ars_init == false) {
       // 1. Initialization
@@ -21,6 +21,8 @@ float* kf_ars_loop(float acc_lpf[3],float gyro_lpf[3]){
         // 4. Update
         Measurement_Update(acc_lpf);
     }
+    //printf("TEST_ARS %f %f %f %f %f %f\n",acc_lpf[0], acc_lpf[1], acc_lpf[2],
+    //                    gyro_lpf[0], gyro_lpf[1], gyro_lpf[2]);
 
     return kf_ars.x_est;
     
@@ -316,6 +318,7 @@ void init_kf_ars(float acc[3]){
     
     acc2attitude(acc, att_euler);
     euler2qut(att_euler, qut);
+    printf("TEST_INIT %d %f\n", att_euler[0], qut[0]);
     //###### State ###########################################
     kf_ars.x_est[0] = qut[0];
     kf_ars.x_est[1] = qut[1];
@@ -344,6 +347,7 @@ void init_kf_ars(float acc[3]){
         Qk_21[i][i] = I_33[i][i];
         Qk_22[i][i] = I_33[i][i];
     }
+    printf("DT %f==========\n",dt);
     const_11 = powf(gyro_sigma_noise, 2)*(dt) + 
             1/3.0*powf(gyro_sigma_bias, 2)*(dt*dt*dt);
     dot_mat_const(Qk_11, const_11, 3);

@@ -55,6 +55,22 @@ int mosa_iope_navi(void){
     mosa_imu_navi_get(f_acc, f_gyro);
     //printf("diff time %d\n", diff_time);
     //printf("IMU DATA %f %f %f\n",f_acc[0],f_acc[1], f_acc[2]);
+    
+
+    if(flag_power_off == true){
+            uint32_t navi_lat, navi_lon;
+            navi_lat = (uint32_t)((g_gnss_data[0]+Dist_IMU_DEG/2.0)*100000);
+            navi_lon = (uint32_t)((g_gnss_data[1]+Dist_IMU_DEG/2.0)*100000);
+            f_gyro[0] = 1.0/100.0;
+            f_gyro[1] = 2.0/100.0;
+            f_gyro[2] = 3.0/100.0;
+            f_acc[0] = 1.0;
+            f_acc[1] = 2.0;
+            f_acc[2] = 3.0;
+            GPS_navi_push(navi_lat, navi_lon, f_acc, f_gyro);
+            return (1);
+    }
+
     Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, g_gnss_data,  
                 flag_power_off, flag_gnss_state, diff_time);
 
