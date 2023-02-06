@@ -5,11 +5,11 @@
 TaskHandle_t        mosa_main_task_handle;
 TaskHandle_t        mosa_imu_task_handle;
 extern uint8_t flag_gnss_state = false;
-extern uint8_t flag_imu_state = false;
+
 extern uint8_t flag_power_off = false;
 extern double Dist_IMU_DEG = 0.0;
-extern double POS_Result[2];
-extern uint32_t time_imu = 0;
+extern double g_gnss_data[2];
+
 /* application entry point */
 void app_main(void)
 {
@@ -52,8 +52,8 @@ void mosa_power_off_cb(int plug_off)
             float f_acc[3] = {0, };
             float f_gyro[3] = {0, };
             uint32_t navi_lat, navi_lon;
-            navi_lat = (uint32_t)((POS_Result[0]+Dist_IMU_DEG/2.0)*100000);
-            navi_lon = (uint32_t)((POS_Result[1]+Dist_IMU_DEG/2.0)*100000);
+            navi_lat = (uint32_t)((g_gnss_data[0]+Dist_IMU_DEG/2.0)*100000);
+            navi_lon = (uint32_t)((g_gnss_data[1]+Dist_IMU_DEG/2.0)*100000);
             f_gyro[0] = 1.0/100.0;
             f_gyro[1] = 2.0/100.0;
             f_gyro[2] = 3.0/100.0;
@@ -75,31 +75,24 @@ void mosa_init()
     xTaskCreate(mosa_main_task, "mosa_main", MOSA_MAIN_TASK_STACK_SIZE,
             NULL, MOSA_MAIN_TASK_PRI, &mosa_main_task_handle);
     /* mos_IOPE_task */
-    xTaskCreate(mosa_iope_task, "mosa_iope", MOSA_MAIN_TASK_STACK_SIZE,
+    xTaskCreate(mosa_iope_task, "mosa_iope", MOSA_IOPE_TASK_STACK_SIZE,
             NULL, MOSA_MAIN_TASK_PRI_IOPE, &mosa_imu_task_handle);
 
 }
-extern float main_f_acc[3];
-extern float main_f_gyro[3];
+
 void mosa_iope_task(void *args)
 {
-    //static uint32_t cnt_iope = 0;
+    uint32_t event_bits;
+    float f_acc[3], f_gyro[3];
 
     while (1) {
-        //if(flag_imu_state == true){
-            
-            //if (cnt_iope > 3000){
-            //    Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, POS_Result, 
-            //        flag_power_off, flag_gnss_state, time_imu);
-            //    printf("$TEST IOPE\n");
-            //} else cnt_iope++;
-            //printf("TEST %f, %f, %f\n",main_f_acc[0],main_f_acc[1],main_f_acc[2]);
-            //flag_imu_state = false;
-            
-        //}
-        printf("TEST \n");
+        xTaskNotifyWait(0, ULONG_MAX, &event_bits, 0);
+        //mosa_imu_navi_get(f_acc, f_gyro);
+        //Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, g_gnss_data, 
+        //            flag_power_off, flag_gnss_state, time_imu);
+        mosa_iope_navi();
+        //printf("TEST %f %f %f\n",f_acc[0],f_acc[1],f_acc[2]);
         vTaskDelay(pdMS_TO_TICKS(10));
-       
     }
 }
 
@@ -126,7 +119,6 @@ void mosa_main_task(void *args)
         }
         if (polltimer_timeout(&timer, 1000)) {
             counter_1s++;
-            //printf("TEST %d\n",counter_1s);
         }
         
         vTaskDelay(pdMS_TO_TICKS(10));

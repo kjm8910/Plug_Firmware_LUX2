@@ -15,7 +15,7 @@ extern void mosa_main_timer_cb(void *args);
 extern void mosa_imu_init();
 extern void mosa_imu_push_cb(float f_acc[3], float f_gyro[3]);
 extern int mosa_imu_navi_get(float f_acc[3], float f_gyro[3]);
-
+extern int mosa_iope_navi(void);
 
 
 /* GPS.c */

@@ -3,6 +3,7 @@
 #define _MOSA_CONFIG_INCLUDE_
 
 #define MOSA_MAIN_TASK_STACK_SIZE            (1024*2)        // 2048 K
+#define MOSA_IOPE_TASK_STACK_SIZE            (1024*4)        // 2048 K
 #define MOSA_MAIN_TASK_PRI                   10           
 #define MOSA_MAIN_TASK_PRI_IOPE              22
 

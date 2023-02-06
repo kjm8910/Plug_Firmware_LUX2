@@ -14,7 +14,7 @@
 extern double del_dist = 0.0;
 extern double dist = 0.0;
 extern uint8_t flag_car_stop = false;
-extern float dt = 0.02;
+extern float dt = 0.01;
 extern double del_deg_pos[2] = {0,};
 
 void imu_unit_conv(float *acc, float *gyro);
@@ -40,7 +40,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     // flag_plug_off true는 차량 전원이 차단되거나 상시 전원의 차량의 경우 슬립모드 진입순간에 발생함
     // gnss[0] == 0은 zeroGPS인 상황
     // 즉, zeroGPS인 상황에서 전원이 차단되어 마지막 데이터를 전송시키기 위한 상태
-    static uint8_t cnt_test = 0;
+    //static uint8_t cnt_test = 0;
     //Pos_IMU[0] = 37.12345;
     //Pos_IMU[1] = 127.0001;
     //memcpy(Pos_IMU, pos_gnss_data, sizeof(pos_gnss_data));
