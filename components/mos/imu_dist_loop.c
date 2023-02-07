@@ -61,7 +61,8 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         // 더해준 후 서버로 전송하는 마지막 버퍼를 통해 서버로 전송
 
         // Total Distance limit => 1000 meter
-        if(dist > 1000.0) dist = 1000.0;
+        // 최종 이동거리 제한은 추후 반영
+        //if(dist > 1000.0) dist = 1000.0;
         del_dist_deg = 0.00001 / 1.11 * dist; // meter to degree
         
         return del_dist_deg;
@@ -123,7 +124,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     static float cNormAcc = 0.0;
     static float pNormAcc = 0.0;
     
-    ACC_Calib(acc_ned, acc_ned_est, 50);
+    ACC_Calib(acc_ned, acc_ned_est, 100);
     /*
     printf("$ACC_NED %f %f %f %f %f %f\n", 
             acc_ned[0], acc_ned[1], acc_ned[2],
@@ -134,7 +135,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     
     // 6. Estimation Pos & Vel Using RK4
     //printf("TEST %f\n", fabsf(cNormAcc - pNormAcc));
-    if (fabsf(cNormAcc - pNormAcc) < 2){
+    if (fabsf(cNormAcc - pNormAcc) < 4){
         Estimation_State(bias_gyro, pre_bias, cnt_ars,
                     acc_ned, acc_ned_est, gyro_est);
         
@@ -273,7 +274,7 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         //printf("$ACC NED %f\t%f\t%f\t%f\t%f\t%f\t\n",acc_ned[0],acc_ned[1],acc_ned[2],
         //                        acc_ned_est[0],acc_ned_est[1],acc_ned_est[2]);
         if(nGyro > 80.0){
-            printf("TEST LOOP 1 nGyro %f\n", nGyro);
+            //printf("TEST LOOP 1 nGyro %f\n", nGyro);
             del_dist = 0.0;
             cnt_ars = 0;
             //if(cnt_ars < 0) cnt_ars = 0;
@@ -303,7 +304,7 @@ void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
         pX_est[3]  = 0.0;
         pX_est[4]  = 0.0;
         pX_est[5]  = 0.0;
-        //cnt_ars--;
+        cnt_ars--;
         memcpy(cX_est, pX_est, sizeof(pX_est));
     }
 

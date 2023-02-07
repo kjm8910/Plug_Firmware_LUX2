@@ -15,7 +15,7 @@
 #define RAD2DEG                             180.0 / 3.141592
 #define DEG2RAD                             3.141592 / 180.0
 #define Gravity                             9.80665   // m / s2
-#define N_Med                               10
+#define N_Med                               3
 #define sf_acc                              1000000.0
 #define sf_att                              1000000.0  
 #define sf_dcm                              1000000.0
