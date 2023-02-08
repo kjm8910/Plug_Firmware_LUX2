@@ -4,7 +4,7 @@ kf_ars_t kf_ars;
 extern float dt;  
 float* kf_ars_loop(float acc_lpf[3], float gyro_lpf[3]){
     static uint8_t flag_ars_init = false; 
-    if (flag_ars_init == false) {
+    if (flag_ars_init == false && acc_lpf[0] != 0) {
       // 1. Initialization
       memset(&kf_ars,0, sizeof(kf_ars)); 
       init_kf_ars(acc_lpf);
