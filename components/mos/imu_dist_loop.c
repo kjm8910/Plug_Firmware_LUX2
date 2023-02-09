@@ -1,13 +1,8 @@
 /*
-    Distance Estimation Using IMU Only
+    Project : IMU Only Position Estimation(IOPE)
     Email : jmkim@carrotins.com
-    Designed By : Jong Myeong Kim(Finn), Digital Innovation
+    Designed By : Jong Myeong Kim(Finn), IoT Tech Team.
 */
-
-// InPut : ACC, GYRO, GNSS
-// OutPut : Filtering Data, Dist, etc
-// https://www.notion.so/08aac645f9a143489406a3f515fd0cf6
-// 프로토콜 참고
 
 #include "imu_dist_loop.h"
 
@@ -27,6 +22,7 @@ void imu_noise_filtering(float acc[3], float gyro[3]);
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
                             uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time){
+    
     dt = (float)(diff_time) / 1000.0;
     
     if(dt < 0.009) return 0;

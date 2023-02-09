@@ -43,9 +43,6 @@ int32_t alt, uint32_t speed, uint32_t acc)
         printf("$TEST flag_power_off %d, flag_gnss_state %d \n", flag_power_off, flag_gnss_state);
         printf("$EST_STATE %d %d %f %f\n",navi_lat, navi_lon, POS_Result[0], POS_Result[1]);
     }*/
-     
-    /* push adjusted navigation data */
-    
 }
 
 
