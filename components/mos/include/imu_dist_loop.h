@@ -16,6 +16,8 @@
 #include "_kf.h"
 #include "_matrix.h"
 
+///////////////////////////////////////
+
 ////////////////////////////////////
 
 typedef struct {
@@ -34,4 +36,13 @@ typedef struct {
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
                             uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time);
 void ACC_Calib(float *acc_ned, float acc_est[3], int N_acc);
+void imu_unit_conv(float *acc, float *gyro);
+void gyro_offset_elimination(float *gyro);
+void define_vehicle_stop(float *bias_gyro, float *pre_bias, 
+                         uint8_t cnt_ars);
+void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
+                      float *acc_ned, float *acc_ned_est, float *gyro);
+void imu_noise_filtering(float acc[3], float gyro[3]);
+
+
 #endif
