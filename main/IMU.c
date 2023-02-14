@@ -22,8 +22,15 @@ void mosa_imu_init()
 void mosa_imu_push_cb(float f_acc[3], float f_gyro[3])
 {
     int i;
+    static int cnt = 0;
+
+    cnt++;
     
-    //printf("$IMU %f\t%f\t%f\t%f\t%f\t%f\t\n",f_gyro[0],f_gyro[1],f_gyro[2], f_acc[0],f_acc[1],f_acc[2]);
+    if(cnt >= 50){
+        printf("$IMU %f %f %f %f %f %f\n",f_gyro[0],f_gyro[1],f_gyro[2], f_acc[0],f_acc[1],f_acc[2]);
+        cnt = 0;
+    }
+    
     
     //Dist_IMU_DEG = dist_Loop(f_acc, f_gyro, g_gnss_data, 
     //                flag_power_off, flag_gnss_state, time_imu);
