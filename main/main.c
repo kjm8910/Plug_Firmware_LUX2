@@ -18,7 +18,8 @@ void app_main(void)
 
     /* 1.1 mosa command */
     mosa_cmd_init();
-    
+    printf("Soil Start ---------________-----------\n");
+
     /* 2. initialize application */
     APP_init();
 
@@ -48,7 +49,7 @@ void mosa_power_off_cb(int plug_off)
         printf("Power off Start ---------________-----------\n");
         //IMU_setup(mosa_imu_push_cb);
         mos_shutdown();
-        if(flag_gnss_state == false){
+        if(flag_gnss_state == false && g_gnss_data[0] != 0){
             float f_acc[3] = {0, };
             float f_gyro[3] = {0, };
             uint32_t navi_lat, navi_lon;
