@@ -104,7 +104,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     gyro_int[0] = (int32_t)(gyro[0]*1e+5);
     gyro_int[1] = (int32_t)(gyro[1]*1e+5);
     gyro_int[2] = (int32_t)(gyro[2]*1e+5);
-
+    //TEST
     // 3. Attitude Reference System Using EKF
     float *x_est_ars;
     float qut[4] ={0, };
