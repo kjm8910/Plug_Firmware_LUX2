@@ -5,6 +5,11 @@
 #define N_buf                               50
 #define GYRO_OFFSET_NUM                     100
 
+#define no_Fix                              0
+#define ThreeD_Fix                          1
+
+#define plug_power_on                       0
+#define plug_power_off                      1
 // Header ////////////////////////
 #include <stdio.h>
 #include <stdint.h>
@@ -34,7 +39,7 @@ typedef struct {
 
 // Function
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
-                            uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time);
+                            uint8_t flag_plug_off, uint8_t flag_gnss_state, int32_t diff_time);
 void ACC_Calib(float *acc_ned, float acc_est[3], int N_acc);
 void imu_unit_conv(float *acc, float *gyro);
 void gyro_offset_elimination(float *gyro);
@@ -43,6 +48,6 @@ void define_vehicle_stop(float *bias_gyro, float *pre_bias,
 void Estimation_State(float *bias_gyro, float *pre_bias, uint8_t cnt_ars,
                       float *acc_ned, float *acc_ned_est, float *gyro);
 void imu_noise_filtering(float acc[3], float gyro[3]);
-
+void float2int32(float *fdata, int32_t *i32data, int8_t data_size);
 
 #endif

@@ -3,30 +3,47 @@
     Email : jmkim@carrotins.com
     Designed By : Jong Myeong Kim(Finn), IoT Tech Team.
 */
+/*
+    <Define InPut Data>
+    1. acc[3]
+        accelerometer raw data
+            unit : g
+    2. gyro[3]
+        gyro raw data
+            unit : degree
+    3. pos_gnss_data[2]
+        GNSS Position Data(Lattitude, Longitude)
+            unit : degree
+    4. flag_gnss_state
+        0 : no Fix
+        1 : 3D Fix
+    5. flag_plug_off
+        true : Plug Power Off
+        false : Plug Power On(Operating)
+    6. diff_time(Delta Time)
+        Differential Time
+        uint : miliSecond(ms)
 
+*/
 #include "imu_dist_loop.h"
 
-    extern double del_dist = 0.0;
-extern double dist = 0.0;
+extern int64_t del_dist = 0.0;
+extern int64_t dist = 0.0;
 extern uint8_t flag_car_stop = false;
-extern float dt = 0.01;
-extern double del_deg_pos[2] = {0,};
+extern int32_t dt = 10;
+extern int64_t del_deg_pos[2] = {0,};
 
 double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2], 
-                            uint8_t flag_plug_off, uint8_t flag_gnss_state, uint32_t diff_time){
+                            uint8_t flag_plug_off, uint8_t flag_gnss_state, int32_t diff_time){
     
-    dt = (float)(diff_time) / 1000.0;
-    
-    if(dt < 0.009) return 0;
+   
     
     //printf("$ACC %f\t%f\t%f\n",acc[0], acc[1], acc[2]);
     //printf("$GYRO %f\t%f\t%f\n",gyro[0], gyro[1], gyro[2]);
-    static uint8_t flag_cross = false;
-    static double Pos_IMU[2] = {0, };
+    static int64_t Pos_IMU[2] = {0, };
     float euler[3] = {0, };              // Attitude(Roll, Pitch, Yaw)
     float acc_ned[3] = {0, };            // Acceleration NED Frame
     float acc_ned_est[3] = {0, };        // Acceleration NED Frame Excepted gravity 
-    static int32_t time_sec = 0;
     double del_dist_deg = 0.0;
     // flag_plug_off true는 차량 전원이 차단되거나 상시 전원의 차량의 경우 슬립모드 진입순간에 발생함
     // gnss[0] == 0은 zeroGPS인 상황
@@ -35,14 +52,27 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     //Pos_IMU[0] = 37.12345;
     //Pos_IMU[1] = 127.0001;
     //memcpy(Pos_IMU, pos_gnss_data, sizeof(pos_gnss_data));
-    if(flag_gnss_state == true){
-        Pos_IMU[0] = pos_gnss_data[0];
-        Pos_IMU[1] = pos_gnss_data[1];
+
+    // Time Check
+    if (diff_time >= 9){
+        dt = diff_time;
+    }
+    else if(diff_time < 9){
+        return 0;
+    } 
+    else{
+        return 0;
+    }
+    
+    // GNSS Data Check
+    if(flag_gnss_state == ThreeD_Fix){
+        Pos_IMU[0] = (int64_t)(pos_gnss_data[0] * 1e+5);
+        Pos_IMU[1] = (int64_t)(pos_gnss_data[1] * 1e+5);
         dist = 0.0;
         del_dist = 0.0;
     }
     
-    if(flag_plug_off == true && flag_gnss_state == false){
+    if(flag_plug_off == plug_power_off && flag_gnss_state == no_Fix){
         // 지하주차장의 경우 zeroGPS인 상황에서 짧게는 수백미터에서 길게는 수키로의 주행거리가 측정된다.
         // 전원 ON & zeroGPS -> IMU 기반의 이동거리 계산 후 전원 OFF면 마지막으로 전송된 GPS 
         // 데이터의 위경도 값에 계산된 Distance를 Degree로 변환하여
@@ -51,7 +81,7 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
         // Total Distance limit => 1000 meter
         // 최종 이동거리 제한은 추후 반영
         //if(dist > 1000.0) dist = 1000.0;
-        del_dist_deg = 0.00001 / 1.11 * dist; // meter to degree
+        del_dist_deg = 0.00001 / 1.11 * (double)(dist/1e+5); // meter to degree
         
         return del_dist_deg;
     }
@@ -63,13 +93,26 @@ double dist_Loop(float acc[3], float gyro[3], double pos_gnss_data[2],
     gyro_offset_elimination(gyro);
     // 2. Filtering(IMU)
     imu_noise_filtering(acc, gyro);
+    
+    int32_t acc_int[3] = {0, };
+    int32_t gyro_int[3] = {0, };
+    float2int32(acc, acc_int, 3);
+    acc_int[0] = (int32_t)(acc[0]*1e+5);
+    acc_int[1] = (int32_t)(acc[1]*1e+5);
+    acc_int[2] = (int32_t)(acc[2]*1e+5);
+
+    gyro_int[0] = (int32_t)(gyro[0]*1e+5);
+    gyro_int[1] = (int32_t)(gyro[1]*1e+5);
+    gyro_int[2] = (int32_t)(gyro[2]*1e+5);
+
     // 3. Attitude Reference System Using EKF
     float *x_est_ars;
     float qut[4] ={0, };
-    float gyro_est[3] = {0, };
-    static float bias_gyro[3] = {0, };
-    static float pre_bias[3] = {0, };
-   
+    int32_t gyro_est[3] = {0, };
+    static int32_t bias_gyro_int[3] = {0, };
+    static int32_t pre_bias_int[3] = {0, };
+    float bias_gyro[3] = {0, };
+
     gyro_est[0] = gyro[0] - (bias_gyro[0]*DEG2RAD);
     gyro_est[1] = gyro[1] - (bias_gyro[1]*DEG2RAD);
     gyro_est[2] = gyro[2] - (bias_gyro[2]*DEG2RAD);
@@ -347,4 +390,13 @@ void imu_noise_filtering(float acc[3], float gyro[3]){
             gyro[0], gyro[1], gyro[2],
             gyro_lpf[0],gyro_lpf[1],gyro_lpf[2]);
     */
+}
+
+
+void float2int32(float *fdata, int32_t *i32data, int8_t data_size){
+
+    int i = 0;
+    for(i = 0; i < data_size; i++){
+        *(i32data + i)  = (int32_t)(*(fdata + i)*1e+5);
+    }
 }
